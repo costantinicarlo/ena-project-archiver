@@ -62,6 +62,20 @@ def test_snapshot_preserves_raw_normalizes_and_builds_manifest(tmp_path: Path) -
     assert (tmp_path / "manifest.tsv").is_file()
 
 
+def test_sample_attributes_use_normalized_primary_accession(tmp_path: Path) -> None:
+    content = _identity_fixture("PRJEB1", "ERP000001")
+    lines = content.decode().splitlines()
+    header = lines[0].split("\t")
+    row = lines[1].split("\t")
+    row[header.index("sample_accession")] = "SAMEA1"
+    row[header.index("secondary_sample_accession")] = "ERS1"
+    client = FileReportClient((lines[0] + "\n" + "\t".join(row) + "\n").encode())
+    create_snapshot("PRJEB1", tmp_path, client=client, now=fixed_now)
+    attributes = (tmp_path / "metadata/derived/sample_attributes.tsv").read_text()
+    assert "SAMEA1\tisolation source\tsoil" in attributes
+    assert "ERS1\tisolation source\tsoil" not in attributes
+
+
 def test_snapshot_refuses_overwrite_and_refresh_archives_previous(tmp_path: Path) -> None:
     create_snapshot("PRJEB1", tmp_path, client=FakeClient(), now=fixed_now)
     with pytest.raises(FileExistsError, match="--refresh"):

@@ -36,14 +36,17 @@ def _write_table(path: Path, columns: Sequence[str], rows: Iterable[Mapping[str,
     temporary.replace(path)
 
 
-def _sample_attributes(xml_dir: Path) -> list[SampleAttribute]:
+def _sample_attributes(
+    xml_dir: Path, canonical_accessions: Mapping[str, str]
+) -> list[SampleAttribute]:
     attributes = set()
     for path in sorted(xml_dir.glob("*.xml")) if xml_dir.is_dir() else []:
         root = ET.fromstring(path.read_bytes())
         sample = next(
             (element for element in root.iter() if element.tag.rsplit("}", 1)[-1] == "SAMPLE"), None
         )
-        accession = sample.get("accession", "") if sample is not None else ""
+        xml_accession = sample.get("accession", "") if sample is not None else ""
+        accession = canonical_accessions.get(xml_accession, xml_accession)
         for element in root.iter():
             if element.tag.rsplit("}", 1)[-1] != "SAMPLE_ATTRIBUTE":
                 continue
@@ -221,7 +224,13 @@ def normalize(
         "run_accession",
         "Run",
     )
-    attributes = _sample_attributes(metadata_dir / "raw" / "xml" / "samples")
+    sample_aliases = {
+        alias: row["sample_accession"]
+        for row in rows
+        for alias in (row.get("sample_accession", ""), row.get("secondary_sample_accession", ""))
+        if alias and row.get("sample_accession")
+    }
+    attributes = _sample_attributes(metadata_dir / "raw" / "xml" / "samples", sample_aliases)
     _write_table(
         derived / "samples.tsv",
         SAMPLE_COLUMNS,

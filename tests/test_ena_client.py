@@ -1,4 +1,5 @@
 import os
+import socket
 from urllib.error import URLError
 
 import pytest
@@ -52,7 +53,7 @@ def test_bare_transport_timeout_is_wrapped_after_bounded_attempts() -> None:
 
     def timeout(request, timeout: int):
         attempts.append(request.full_url)
-        raise TimeoutError("read timed out")
+        raise socket.timeout("read timed out")
 
     client = EnaClient(attempts=2, opener=timeout, sleeper=lambda delay: None)
     with pytest.raises(EnaRequestError, match="read timed out"):
