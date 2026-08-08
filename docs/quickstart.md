@@ -4,7 +4,7 @@ Publications may cite a BioProject such as `PRJEB...`, `PRJNA...`, or `PRJDB...`
 Study such as `ERP...`, `SRP...`, or `DRP...`. A PRJ accession is the canonical cross-repository
 project identity. ERP, SRP, and DRP identify the corresponding Study namespace. The archiver keeps
 the accession you supplied, the canonical project, and the Study identity separately, so beginning
-with either alias does not erase provenance. Version 0.1.0 deliberately rejects a project report
+with either alias does not erase provenance. Version 0.1 deliberately rejects a project report
 containing multiple Studies; archive each Study explicitly instead of silently collapsing them.
 
 ## Choose a location and install

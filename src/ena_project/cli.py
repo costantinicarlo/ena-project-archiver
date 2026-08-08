@@ -143,6 +143,20 @@ def _load_download_input(args: argparse.Namespace, outdir: Path):
         if source.suffix.lower() != ".tsv":
             raise ValueError("Manifest input must use the .tsv extension")
         entries = read_manifest(source)
+        snapshot_path = outdir / "metadata" / "snapshot.json"
+        if snapshot_path.is_file():
+            try:
+                snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
+            except (OSError, json.JSONDecodeError) as exc:
+                raise ValueError(f"Unable to read existing snapshot metadata: {exc}") from exc
+            expected_project = str(snapshot.get("project_accession", ""))
+            expected_study = str(snapshot.get("study_accession", ""))
+            manifest_projects = {entry.project_accession for entry in entries}
+            manifest_studies = {entry.study_accession for entry in entries}
+            if expected_project and manifest_projects != {expected_project}:
+                raise ValueError("Manifest input is incompatible with the existing archive snapshot")
+            if expected_study and manifest_studies != {expected_study}:
+                raise ValueError("Manifest input is incompatible with the existing archive snapshot")
         destination = outdir / "manifest.tsv"
         if source.resolve() != destination.resolve():
             if destination.exists() and destination.read_bytes() != source.read_bytes():

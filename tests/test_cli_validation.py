@@ -148,3 +148,26 @@ def test_metadata_validation_rejects_duplicate_inventory_file_identity(tmp_path:
     files_path.write_text("\n".join([*lines, lines[1]]) + "\n")
     errors = validate_metadata(tmp_path)
     assert any("Duplicate inventory file identity" in error for error in errors)
+
+
+def test_manifest_input_rejects_incompatible_archive_snapshot(tmp_path: Path) -> None:
+    create_snapshot("PRJEB1", tmp_path, client=FakeClient(), policy="archival", now=fixed_now)
+    manifest_path = tmp_path / "manifest.tsv"
+    entries = read_manifest(manifest_path)
+    other_manifest = tmp_path / "other.tsv"
+    from ena_project.manifest import write_manifest
+
+    entries = [replace(entry, project_accession="PRJEB999", study_accession="ERP999") for entry in entries]
+    write_manifest(entries, other_manifest)
+    assert main(["download", str(other_manifest), "--outdir", str(tmp_path), "--dry-run"]) == 2
+
+
+def test_metadata_validation_rejects_manifest_provenance_mismatch(tmp_path: Path) -> None:
+    create_snapshot("PRJEB1", tmp_path, client=FakeClient(), policy="archival", now=fixed_now)
+    manifest_path = tmp_path / "manifest.tsv"
+    from ena_project.manifest import write_manifest
+
+    entries = [replace(entry, library_strategy="RNA-SEQ") for entry in read_manifest(manifest_path)]
+    write_manifest(entries, manifest_path)
+    errors = validate_metadata(tmp_path)
+    assert any("Manifest content" in error for error in errors)
