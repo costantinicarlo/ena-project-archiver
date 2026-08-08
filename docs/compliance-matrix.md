@@ -4,7 +4,7 @@ Audit date: 2026-08-08
 
 Authoritative contract: [SPECIFICATION.md](SPECIFICATION.md)
 
-Audited release: `v0.1.1` (`42cf1a2`)
+Audited release: `v0.1.2` (the release commit)
 
 Offline tests: `79 passed, 1 skipped` on Python 3.9, 3.12, and 3.13
 
