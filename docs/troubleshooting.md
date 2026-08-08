@@ -19,7 +19,7 @@ objects are checked by byte count and MD5 and skipped, so reruns concentrate on 
 
 ```bash
 ena-project download "$OUTDIR/manifest.tsv" --outdir "$OUTDIR" \
-	--jobs 1 --batch-attempts 3
+    --jobs 1 --batch-attempts 3
 cat "$OUTDIR/logs/failed_accessions.txt"
 ```
 

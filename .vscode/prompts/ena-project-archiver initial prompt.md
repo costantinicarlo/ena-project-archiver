@@ -1,3 +1,5 @@
+# ENA Project Archiver Initial Implementation Prompt
+
 You are a senior Python software engineer and scientific-data infrastructure architect. Your task is to implement a new open-source CLI application for reproducible archival acquisition of raw sequencing data and metadata from the European Nucleotide Archive (ENA).
 
 The application is the ENA sibling of:

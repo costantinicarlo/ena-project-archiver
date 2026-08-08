@@ -2,9 +2,9 @@
 
 ## Formal Design and Implementation Specification
 
-**Status:** Proposed specification for v0.1  
-**Working application name:** `ena-project`  
-**Repository working name:** `ena-project-archiver`  
+**Status:** Proposed specification for v0.1
+**Working application name:** `ena-project`
+**Repository working name:** `ena-project-archiver`
 **Primary purpose:** Reproducible archival acquisition of raw sequencing data and associated metadata from the European Nucleotide Archive (ENA)
 
 ---
