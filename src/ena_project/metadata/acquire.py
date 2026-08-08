@@ -30,13 +30,12 @@ def validate_filereport_header(content: bytes) -> None:
     if len(header) != len(set(header)):
         raise EnaRequestError("ENA file report contains duplicate header fields")
     expected = list(FILEREPORT_FIELDS)
-    if header != expected:
+    if set(header) != set(expected):
         missing = [field for field in expected if field not in header]
         unknown = [field for field in header if field not in expected]
         raise EnaRequestError(
             "ENA file report schema mismatch: "
-            f"missing={missing or 'none'}, unknown={unknown or 'none'}, "
-            "or fields returned out of requested order"
+            f"missing={missing or 'none'}, unknown={unknown or 'none'}"
         )
 
 
