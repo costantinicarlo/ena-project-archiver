@@ -80,7 +80,7 @@ Status describes demonstrated behavior, not the presence of a similarly named mo
 
 ## Known limitations
 
-- Version 0.2 rejects multi-Study project-level reports and asks the user to archive a specific Study.
+- Version 0.1 rejects multi-Study project-level reports and asks the user to archive a specific Study.
 - Only HTTPS objects on the approved ENA host are accepted; alternative transports are deferred.
 - Browser XML failures produce an explicit partial snapshot rather than making the required Portal inventory unusable.
 - Validation verifies repository size and MD5, not format-level FASTQ/BAM/SRA semantics.
