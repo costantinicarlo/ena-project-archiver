@@ -1,6 +1,6 @@
 # From a Paper to a Reusable Local ENA Dataset
 
-An end-to-end tutorial for ENA Project Archiver 0.1.1.
+An end-to-end tutorial for ENA Project Archiver 0.1.2.
 
 A paper catches your attention because its sequencing data could answer a question of your own. Perhaps you want to reanalyse an RNA-seq experiment with a newer reference genome, include published genomes in a population-genetic comparison, or simply preserve an important dataset locally before building a computational workflow around it.
 
@@ -50,7 +50,7 @@ source ~/.venvs/ena-project/bin/activate
 
 python -m pip install --upgrade pip
 python -m pip install \
-  "git+https://github.com/costantinicarlo/ena-project-archiver.git@v0.1.1"
+  "git+https://github.com/costantinicarlo/ena-project-archiver.git@v0.1.2"
 ```
 
 Confirm the installation:
@@ -64,7 +64,7 @@ The application requires Python 3.9 or newer and uses `curl` for sequence transf
 If you prefer to work from a checkout:
 
 ```bash
-git clone --branch v0.1.1 --depth 1 \
+git clone --branch v0.1.2 --depth 1 \
   https://github.com/costantinicarlo/ena-project-archiver.git
 
 cd ena-project-archiver
@@ -524,7 +524,7 @@ The command treats the manifest as the acquisition contract and does not redisco
 
 This is valuable for reproducibility: the second machine executes a previously made decision rather than making a new one.
 
-Do not casually combine a manifest from one project with an archive directory belonging to another. Version 0.1.1 explicitly checks project and Study identity when an existing snapshot is present and refuses cross-project contamination.
+Do not casually combine a manifest from one project with an archive directory belonging to another. Version 0.1.2 explicitly checks project and Study identity when an existing snapshot is present and refuses cross-project contamination.
 
 ---
 

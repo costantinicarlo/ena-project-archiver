@@ -2,7 +2,7 @@
 
 All notable changes to this project are documented here. No `0.2.0` release was published; that label appeared only in pre-release development history.
 
-## Unreleased
+## 0.1.2 - 2026-08-08
 
 ### Fixed
 
