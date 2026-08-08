@@ -2,9 +2,9 @@
 
 ## Formal Design and Implementation Specification
 
-**Status:** Proposed specification for v0.1  
-**Working application name:** `ena-project`  
-**Repository working name:** `ena-project-archiver`  
+**Status:** Proposed specification for v0.1
+**Working application name:** `ena-project`
+**Repository working name:** `ena-project-archiver`
 **Primary purpose:** Reproducible archival acquisition of raw sequencing data and associated metadata from the European Nucleotide Archive (ENA)
 
 ---
@@ -61,7 +61,7 @@ Convenience for immediate downstream analysis is important but SHALL NOT overrid
 
 ---
 
-# 2. Normative terminology
+## 2. Normative terminology
 
 The terms **MUST**, **MUST NOT**, **SHALL**, **SHALL NOT**, **SHOULD**, **SHOULD NOT**, and **MAY** are normative.
 
@@ -73,7 +73,7 @@ A MAY requirement is optional.
 
 ---
 
-# 3. Scientific and archival model
+## 3. Scientific and archival model
 
 ENA commonly exposes several possible representations of a raw-read Run:
 
@@ -99,7 +99,7 @@ The application SHALL NOT assume that FASTQ is the sole or universally preferred
 
 ---
 
-# 4. Scope of v0.1
+## 4. Scope of v0.1
 
 ## 4.1 Included
 
@@ -160,7 +160,7 @@ Support for ENA Analysis objects and other ENA sequence classes is reserved for 
 
 ---
 
-# 5. Relationship with the existing NCBI archiver
+## 5. Relationship with the existing NCBI archiver
 
 The new application SHALL be a **separate software repository**.
 
@@ -190,7 +190,7 @@ A common library SHALL NOT be extracted before working implementations demonstra
 
 ---
 
-# 6. Canonical archive identity
+## 6. Canonical archive identity
 
 ## 6.1 BioProject accession
 
@@ -259,7 +259,7 @@ This condition MUST:
 
 ---
 
-# 7. Recommended storage hierarchy
+## 7. Recommended storage hierarchy
 
 The long-term archive SHOULD distinguish biological project identity from repository provenance.
 
@@ -288,7 +288,7 @@ The repository/source distinction is important because identically accessioned R
 
 ---
 
-# 8. ENA interfaces
+## 8. ENA interfaces
 
 ## 8.1 Portal/File Report API
 
@@ -355,7 +355,7 @@ Normalization MUST operate from preserved raw responses whenever practical.
 
 ---
 
-# 9. Metadata acquisition transaction
+## 9. Metadata acquisition transaction
 
 A metadata snapshot SHALL occur as a transaction.
 
@@ -385,7 +385,7 @@ new current snapshot
 
 ---
 
-# 10. Output directory contract
+## 10. Output directory contract
 
 The ENA archive root SHALL have the following structure:
 
@@ -449,7 +449,7 @@ The application SHALL NOT rename submitted files to sample or run identifiers me
 
 ---
 
-# 11. Raw metadata contract
+## 11. Raw metadata contract
 
 The application SHALL preserve the exact successful ENA responses on which normalization was based.
 
@@ -482,7 +482,7 @@ Raw files SHALL NOT be reformatted for aesthetics.
 
 ---
 
-# 12. Normalized metadata products
+## 12. Normalized metadata products
 
 Normalized files are stable machine-readable interpretations of the raw ENA responses.
 
@@ -606,7 +606,7 @@ Records SHALL be sorted by `run_accession`.
 
 ---
 
-# 13. Complete remote file inventory
+## 13. Complete remote file inventory
 
 ## 13.1 `files.tsv`
 
@@ -663,7 +663,7 @@ ENA documents separate storage structures for submitted, generated FASTQ and SRA
 
 ---
 
-# 14. File-array consistency
+## 14. File-array consistency
 
 For every ENA representation, the associated URL, MD5 and byte-count arrays MUST be internally consistent.
 
@@ -704,7 +704,7 @@ An upstream metadata inconsistency MUST NOT silently trigger fallback to another
 
 ---
 
-# 15. Inventory versus manifest
+## 15. Inventory versus manifest
 
 `files.tsv` and `manifest.tsv` have fundamentally different meanings.
 
@@ -744,7 +744,7 @@ without further network access.
 
 ---
 
-# 16. Representation-selection policies
+## 16. Representation-selection policies
 
 The CLI SHALL support:
 
@@ -864,7 +864,7 @@ This mode SHOULD be documented as storage-expensive and primarily intended for d
 
 ---
 
-# 17. Manifest contract
+## 17. Manifest contract
 
 `manifest.tsv` is the immutable acquisition contract.
 
@@ -922,7 +922,7 @@ The downloader SHALL consume paths from the manifest rather than independently r
 
 ---
 
-# 18. Snapshot identifier
+## 18. Snapshot identifier
 
 Every successful metadata snapshot SHALL receive an immutable identifier based on UTC time, for example:
 
@@ -938,7 +938,7 @@ It SHALL be used when archiving previous metadata states and superseded data obj
 
 ---
 
-# 19. `snapshot.json`
+## 19. `snapshot.json`
 
 `snapshot.json` is the provenance ledger for the metadata transaction.
 
@@ -977,7 +977,7 @@ Snapshot files SHALL be written atomically.
 
 ---
 
-# 20. Metadata refresh
+## 20. Metadata refresh
 
 Existing metadata SHALL never be silently overwritten.
 
@@ -1007,7 +1007,7 @@ A refresh SHALL NOT automatically delete downloaded sequence files.
 
 ---
 
-# 21. Detecting changed upstream sequence objects
+## 21. Detecting changed upstream sequence objects
 
 Public repository records may occasionally be corrected or updated.
 
@@ -1053,7 +1053,7 @@ repository revision
 
 ---
 
-# 22. Download transaction
+## 22. Download transaction
 
 Every selected file SHALL be downloaded transactionally.
 
@@ -1081,7 +1081,7 @@ A final file is complete only when it matches the manifest.
 
 ---
 
-# 23. Resume behavior
+## 23. Resume behavior
 
 Downloads SHALL be resumable where supported by the server and transport.
 
@@ -1097,7 +1097,7 @@ A `.part` file MUST never be mistaken for a completed archival object.
 
 ---
 
-# 24. Existing final files
+## 24. Existing final files
 
 Before downloading a file whose final destination already exists, the application SHALL:
 
@@ -1117,7 +1117,7 @@ Running the same verified manifest repeatedly SHALL eventually perform no networ
 
 ---
 
-# 25. Checksum policy
+## 25. Checksum policy
 
 ENA-provided MD5 SHALL be the authoritative content identity for sequence-data acquisition because it permits direct verification against the repository's advertised object. ENA uses MD5 during submission specifically to confirm that transferred files match the deposited files. ([ENA Documentation](https://ena-docs.readthedocs.io/en/latest/submit/fileprep/preparation.html?utm_source=chatgpt.com "Preparing A File For Upload — ENA Documentation 1 documentation"))
 
@@ -1137,7 +1137,7 @@ If local SHA-256 support is implemented, it SHOULD be written to a separate loca
 
 ---
 
-# 26. Transport
+## 26. Transport
 
 Version 0.1 SHALL use `curl` as the external transfer engine unless a demonstrably superior dependency-free mechanism is selected.
 
@@ -1158,7 +1158,7 @@ The manifest data model SHALL NOT make future alternative transports impossible.
 
 ---
 
-# 27. Parallelism
+## 27. Parallelism
 
 Multiple independent remote files MAY be downloaded concurrently.
 
@@ -1190,7 +1190,7 @@ A failure in one worker SHALL NOT automatically cancel unrelated valid downloads
 
 ---
 
-# 28. Failure collection and retry
+## 28. Failure collection and retry
 
 A download failure SHALL be associated with its exact file and Run.
 
@@ -1218,7 +1218,7 @@ A partially successful download command SHALL return a non-zero exit status.
 
 ---
 
-# 29. Dry run
+## 29. Dry run
 
 The application SHALL provide:
 
@@ -1271,7 +1271,7 @@ A dry run SHALL perform enough metadata work to determine whether the intended m
 
 ---
 
-# 30. CLI contract
+## 30. CLI contract
 
 The installed command SHALL be:
 
@@ -1381,7 +1381,7 @@ SHALL rebuild normalized metadata from preserved raw responses without contactin
 
 ---
 
-# 31. Input inference
+## 31. Input inference
 
 Input type inference SHALL be conservative.
 
@@ -1393,7 +1393,7 @@ Ambiguous inputs SHALL cause a clear configuration error rather than being guess
 
 ---
 
-# 32. Archive validation
+## 32. Archive validation
 
 `ena-project validate OUTDIR` SHALL check at least:
 
@@ -1453,7 +1453,7 @@ Validation SHALL report all discovered problems where practical rather than stop
 
 ---
 
-# 33. Security and filesystem safety
+## 33. Security and filesystem safety
 
 Remote filenames SHALL be treated as untrusted input.
 
@@ -1476,7 +1476,7 @@ External commands SHOULD be executed using argument arrays.
 
 ---
 
-# 34. Mounted-volume protection
+## 34. Mounted-volume protection
 
 The useful macOS safety behavior from the NCBI application SHOULD be retained.
 
@@ -1496,7 +1496,7 @@ Ordinary filesystem behavior MUST remain portable to Linux.
 
 ---
 
-# 35. Metadata and network politeness
+## 35. Metadata and network politeness
 
 The client SHALL identify itself appropriately where ENA permits or expects a user agent.
 
@@ -1508,7 +1508,7 @@ Large metadata workflows SHOULD remain considerate of repository infrastructure.
 
 ---
 
-# 36. Logging
+## 36. Logging
 
 Important operational events SHALL be logged with timestamps.
 
@@ -1540,7 +1540,7 @@ Machine-readable provenance SHALL remain in metadata/manifests rather than depen
 
 ---
 
-# 37. Exit statuses
+## 37. Exit statuses
 
 To retain semantic similarity with the NCBI sibling, v0.1 SHOULD use:
 
@@ -1567,7 +1567,7 @@ A command MUST NOT return `0` when required files failed verification.
 
 ---
 
-# 38. Snapshot completeness
+## 38. Snapshot completeness
 
 A snapshot SHALL have an explicit state such as:
 
@@ -1587,7 +1587,7 @@ A genuine ENA response indicating no records is distinct from a failed ENA reque
 
 ---
 
-# 39. Schema versioning
+## 39. Schema versioning
 
 Metadata schemas and manifest schemas SHALL be explicitly versioned.
 
@@ -1607,7 +1607,7 @@ Preserved raw responses MUST make migration or renormalization possible without 
 
 ---
 
-# 40. Determinism
+## 40. Determinism
 
 Given:
 
@@ -1637,7 +1637,7 @@ JSON serialization intended to be deterministic SHOULD use stable key ordering a
 
 ---
 
-# 41. Dependencies
+## 41. Dependencies
 
 Version 0.1 SHOULD have a deliberately modest dependency footprint.
 
@@ -1668,7 +1668,7 @@ This distinguishes ENA FASTQ acquisition from the NCBI workflow in which FASTQ m
 
 ---
 
-# 42. Proposed Python package architecture
+## 42. Proposed Python package architecture
 
 Recommended structure:
 
@@ -1752,7 +1752,7 @@ Business rules SHOULD NOT accumulate in the CLI module.
 
 ---
 
-# 43. Internal data models
+## 43. Internal data models
 
 The implementation SHOULD define explicit typed models corresponding approximately to:
 
@@ -1787,7 +1787,7 @@ A `ManifestEntry` adds selection and local-destination information.
 
 ---
 
-# 44. No hidden inference of biological semantics
+## 44. No hidden inference of biological semantics
 
 The application SHALL preserve repository metadata but SHALL be conservative about biological inference.
 
@@ -1806,7 +1806,7 @@ The archiver is not a sequencing-analysis pipeline.
 
 ---
 
-# 45. Run completeness
+## 45. Run completeness
 
 All files belonging to the selected representation of a Run SHALL be treated as one logical selection set.
 
@@ -1825,7 +1825,7 @@ The application MUST therefore select **all files in the chosen representation*
 
 ---
 
-# 46. Tests required for v0.1
+## 46. Tests required for v0.1
 
 The test suite SHALL contain both unit tests and fixture-driven integration-style tests that do not depend on live ENA availability.
 
@@ -1916,7 +1916,7 @@ Repeated normalization of the same fixtures SHALL produce byte-identical normali
 
 ---
 
-# 47. Live ENA smoke tests
+## 47. Live ENA smoke tests
 
 A small set of live integration tests MAY run separately from the normal test suite.
 
@@ -1938,7 +1938,7 @@ Ordinary unit-test success SHALL NOT depend on ENA being online.
 
 ---
 
-# 48. Acceptance criteria for v0.1
+## 48. Acceptance criteria for v0.1
 
 Version 0.1 SHALL NOT be considered complete until the following end-to-end scenario succeeds:
 
@@ -1981,7 +1981,7 @@ Version 0.1 SHALL NOT be considered complete until the following end-to-end scen
 
 ---
 
-# 49. Explicit anti-requirements
+## 49. Explicit anti-requirements
 
 An implementation SHALL be rejected if it does any of the following:
 
@@ -2019,7 +2019,7 @@ by Study metadata.
 
 ---
 
-# 50. Deferred features
+## 50. Deferred features
 
 The following are desirable but explicitly outside the v0.1 contract:
 
@@ -2057,7 +2057,7 @@ Their future addition MUST preserve backward readability of v0.1 archives.
 
 ---
 
-# 51. Long-term architectural direction
+## 51. Long-term architectural direction
 
 The ENA and NCBI applications should eventually form repository-specific acquisition front ends around a common conceptual archival model:
 
@@ -2108,7 +2108,7 @@ This extraction SHALL occur only after both applications provide concrete eviden
 
 ---
 
-# 52. Archival philosophy
+## 52. Archival philosophy
 
 The application SHALL embody the following principle:
 
@@ -2153,7 +2153,7 @@ That requirement is the central design constraint of `ena-project`.
 
 ---
 
-# 53. Initial implementation milestone
+## 53. Initial implementation milestone
 
 The recommended first development milestone is deliberately smaller than the complete CLI.
 
