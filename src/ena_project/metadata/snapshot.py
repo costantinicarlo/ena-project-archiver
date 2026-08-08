@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import json
 import logging
+import platform
 import shutil
 from datetime import datetime, timezone
 from pathlib import Path
@@ -16,17 +17,34 @@ from ..inventory import read_inventory, sha256sum
 from ..manifest import build_manifest, read_run_metadata, write_manifest
 from .acquire import MetadataClient, acquire_raw, atomic_write
 from .normalize import normalize
-from .schemas import SCHEMA_VERSION
+from .schemas import SNAPSHOT_SCHEMA_VERSION
 
 LOGGER = logging.getLogger(__name__)
+SENSITIVE_OPTIONS = {"--api-key", "--password", "--token"}
 
 
 def utc_now() -> datetime:
     return datetime.now(timezone.utc)
 
 
-def _snapshot_id(now: datetime) -> str:
-    return now.strftime("%Y%m%dT%H%M%SZ")
+def _snapshot_id(outdir: Path, instant: datetime) -> str:
+    base = instant.strftime("%Y%m%dT%H%M%S.%fZ")
+    used = set()
+    snapshot_path = outdir / "metadata" / "snapshot.json"
+    if snapshot_path.is_file():
+        try:
+            used.add(json.loads(snapshot_path.read_text(encoding="utf-8"))["snapshot_id"])
+        except (KeyError, json.JSONDecodeError):
+            pass
+    archive = outdir / "metadata" / "archive"
+    if archive.is_dir():
+        used.update(path.name for path in archive.iterdir())
+    if base not in used:
+        return base
+    suffix = 1
+    while f"{base}-{suffix:02d}" in used:
+        suffix += 1
+    return f"{base}-{suffix:02d}"
 
 
 def _describe(path: Path, root: Path, artifact_type: str) -> dict[str, object]:
@@ -38,6 +56,25 @@ def _describe(path: Path, root: Path, artifact_type: str) -> dict[str, object]:
     }
 
 
+def _sanitize_invocation(invocation: list[str] | None) -> list[str]:
+    if invocation is None:
+        return ["Python API"]
+    sanitized: list[str] = []
+    redact_next = False
+    for argument in invocation:
+        if redact_next:
+            sanitized.append("<redacted>")
+            redact_next = False
+        elif argument in SENSITIVE_OPTIONS:
+            sanitized.append(argument)
+            redact_next = True
+        elif any(argument.startswith(f"{option}=") for option in SENSITIVE_OPTIONS):
+            sanitized.append(f"{argument.split('=', 1)[0]}=<redacted>")
+        else:
+            sanitized.append(argument)
+    return sanitized
+
+
 def create_snapshot(
     accession: str,
     outdir: Path,
@@ -46,12 +83,20 @@ def create_snapshot(
     refresh: bool = False,
     policy: str | None = None,
     now: Callable[[], datetime] = utc_now,
+    invocation: list[str] | None = None,
 ) -> tuple[Path, bool]:
     parsed = parse_accession(accession)
     current = outdir / "metadata"
-    if (current / "snapshot.json").exists() and not refresh:
+    current_snapshot = current / "snapshot.json"
+    if current_snapshot.exists() and not refresh:
         raise FileExistsError(f"Metadata snapshot exists at {current}; use --refresh")
-    stamp = _snapshot_id(now())
+    if not current_snapshot.exists() and (outdir / "manifest.tsv").exists():
+        raise FileExistsError(
+            f"Orphan manifest exists at {outdir / 'manifest.tsv'} without snapshot provenance; "
+            "move or remove it explicitly before metadata acquisition"
+        )
+    transaction_time = now()
+    stamp = _snapshot_id(outdir, transaction_time)
     staging_root = outdir / f".metadata-staging-{stamp}"
     if staging_root.exists():
         raise FileExistsError(f"Snapshot staging path already exists: {staging_root}")
@@ -89,10 +134,15 @@ def create_snapshot(
         if manifest_path.is_file():
             artifacts.append(_describe(manifest_path, staging_root, "manifest"))
         snapshot = {
-            "schema_version": SCHEMA_VERSION,
+            "schema_version": SNAPSHOT_SCHEMA_VERSION,
             "tool_version": __version__,
+            "application": "ENA Project Archiver",
+            "application_version": __version__,
+            "python_version": platform.python_version(),
+            "platform": platform.platform(),
+            "command": _sanitize_invocation(invocation),
             "snapshot_id": stamp,
-            "created_at": now().replace(microsecond=0).isoformat().replace("+00:00", "Z"),
+            "created_at": transaction_time.isoformat().replace("+00:00", "Z"),
             "input_accession": parsed.value,
             "project_accession": project_accession,
             "study_accession": study_accession,
@@ -114,6 +164,13 @@ def create_snapshot(
             (json.dumps(snapshot, indent=2, sort_keys=True) + "\n").encode(),
         )
 
+        from ..validation import validate_metadata
+
+        staging_errors = validate_metadata(staging_root)
+        if staging_errors:
+            raise ValueError("Staged metadata validation failed:\n" + "\n".join(staging_errors))
+
+        new_manifest_created = manifest_path.is_file()
         old_metadata = outdir / f".metadata-old-{stamp}"
         old_manifest = outdir / f".manifest-old-{stamp}.tsv"
         if current.exists():
@@ -135,6 +192,12 @@ def create_snapshot(
         finally:
             shutil.rmtree(staging_root, ignore_errors=True)
         shutil.rmtree(old_metadata, ignore_errors=True)
+        if old_manifest.exists() and not new_manifest_created:
+            LOGGER.info(
+                "Archived the previous manifest with snapshot %s; the metadata-only refresh "
+                "has no current acquisition manifest",
+                previous_id,
+            )
         old_manifest.unlink(missing_ok=True)
         LOGGER.info("Snapshot completed for %s with status %s", parsed.value, snapshot["status"])
         return current / "snapshot.json", bool(snapshot["warnings"])

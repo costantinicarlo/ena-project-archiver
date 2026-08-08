@@ -20,10 +20,15 @@ from .downloader import (
 )
 from .ena_client import EnaClient, EnaRequestError
 from .inventory import InventoryError, read_inventory
-from .manifest import ManifestError, manifest_from_inventory, read_manifest, write_manifest
+from .manifest import (
+    ManifestError,
+    manifest_from_inventory,
+    read_manifest,
+    write_manifest,
+)
 from .metadata.snapshot import create_snapshot, normalize_existing
 from .selection import POLICIES, SelectionError
-from .validation import validate_archive
+from .validation import validate_archive, validate_metadata
 
 
 def positive_integer(value: str) -> int:
@@ -79,7 +84,14 @@ def build_parser() -> argparse.ArgumentParser:
     download.add_argument("--outdir", type=Path, required=True)
     download.add_argument("--representation", choices=POLICIES, default="archival")
     download.add_argument("--jobs", type=positive_integer, default=2)
-    download.add_argument("--attempts", type=positive_integer, default=3)
+    download.add_argument(
+        "--batch-attempts",
+        "--attempts",
+        dest="batch_attempts",
+        type=positive_integer,
+        default=3,
+        help="retry passes for failed files (--attempts is a deprecated alias)",
+    )
     download.add_argument("--timeout", type=positive_integer, default=60)
     download.add_argument("--metadata-attempts", type=positive_integer, default=4)
     download.add_argument("--refresh", action="store_true")
@@ -89,6 +101,11 @@ def build_parser() -> argparse.ArgumentParser:
 
     validate = subparsers.add_parser("validate", help="validate an existing ENA archive")
     validate.add_argument("path", type=Path)
+    validate.add_argument(
+        "--metadata-only",
+        action="store_true",
+        help="validate snapshot structure without requiring downloaded sequence objects",
+    )
     validate.set_defaults(handler=run_validate)
 
     normalize = subparsers.add_parser("metadata-normalize", help="rebuild derived metadata offline")
@@ -108,6 +125,7 @@ def run_metadata(args: argparse.Namespace) -> int:
         client=EnaClient(timeout=args.timeout, attempts=args.attempts),
         refresh=args.refresh,
         policy=policy,
+        invocation=args.invocation,
     )
     return 4 if partial else 0
 
@@ -132,22 +150,50 @@ def _load_download_input(args: argparse.Namespace, outdir: Path):
             write_manifest(entries, destination)
         return entries
     accession = parse_accession(args.input)
+    snapshot_path = outdir / "metadata" / "snapshot.json"
     manifest = outdir / "manifest.tsv"
-    if args.refresh or not manifest.is_file():
+    if args.refresh or not snapshot_path.is_file():
         create_snapshot(
             accession.value,
             outdir,
             client=EnaClient(timeout=args.timeout, attempts=args.metadata_attempts),
             refresh=args.refresh,
             policy=args.representation,
+            invocation=args.invocation,
         )
-    return read_manifest(manifest)
+        return read_manifest(manifest)
+    snapshot = json.loads(snapshot_path.read_text(encoding="utf-8"))
+    aliases = {
+        str(snapshot.get("input_accession", "")),
+        str(snapshot.get("project_accession", "")),
+        str(snapshot.get("study_accession", "")),
+    }
+    if accession.value not in aliases:
+        raise ValueError(
+            f"Requested accession {accession.value} does not identify the local snapshot "
+            f"({', '.join(sorted(value for value in aliases if value))})"
+        )
+    existing = read_manifest(manifest) if manifest.is_file() else []
+    policies = {entry.selection_policy for entry in existing}
+    if existing and policies == {args.representation}:
+        return existing
+    files_path = outdir / "metadata" / "derived" / "files.tsv"
+    if not files_path.is_file():
+        raise ValueError(
+            "Matching metadata snapshot has no valid files.tsv; use --refresh to reacquire metadata"
+        )
+    logging.info("Building %s manifest offline from current metadata", args.representation)
+    return manifest_from_inventory(files_path, manifest, args.representation)
 
 
 def _dry_run(entries, outdir: Path) -> None:
     runs = {entry.run_accession for entry in entries}
     representations = Counter(entry.representation for entry in entries)
-    reasons = Counter(entry.selection_reason for entry in entries)
+    run_decisions = {
+        (entry.run_accession, entry.representation, entry.selection_reason) for entry in entries
+    }
+    run_representations = Counter(representation for _, representation, _ in run_decisions)
+    fallback_runs = Counter(reason for _, _, reason in run_decisions if "not_available" in reason)
     total = sum(entry.size_bytes for entry in entries)
     remaining = sum(
         entry.size_bytes
@@ -176,15 +222,39 @@ def _dry_run(entries, outdir: Path) -> None:
     for name in ("submitted", "fastq", "sra"):
         print(f"{name} files available: {available[name]}")
     print(f"Selection policy: {entries[0].selection_policy if entries else ''}")
-    print(f"Selected files: {len(entries)}")
-    print(f"Selected bytes: {total}")
+    print("Representation selected by Run:")
+    for name in ("submitted", "sra", "fastq"):
+        print(f"  {run_representations[name]} {name}")
+    print("Selected physical files:")
     for name in ("submitted", "fastq", "sra"):
-        print(f"{name} files selected: {representations[name]}")
-    for reason, count in sorted(reasons.items()):
-        print(f"selection reason {reason}: {count}")
+        print(f"  {representations[name]} {name}")
+    print(f"Selected files: {len(entries)}")
+    print(f"Selected bytes: {total} ({_iec_size(total)})")
+    print("Fallback Runs:")
+    if fallback_runs:
+        for reason, count in sorted(fallback_runs.items()):
+            print(f"  {count} {reason}")
+    else:
+        print("  0")
     print(f"Destination: {outdir}")
-    print(f"Available bytes: {usage.free}")
-    print(f"Estimated remaining bytes after acquisition: {max(0, usage.free - remaining)}")
+    print(f"Remaining required bytes: {remaining} ({_iec_size(remaining)})")
+    print(f"Available bytes: {usage.free} ({_iec_size(usage.free)})")
+    print(
+        "Estimated free bytes after acquisition: "
+        f"{max(0, usage.free - remaining)} ({_iec_size(max(0, usage.free - remaining))})"
+    )
+    if remaining > usage.free:
+        print("WARNING: remaining required bytes exceed available filesystem space")
+
+
+def _iec_size(size: int) -> str:
+    value = float(size)
+    units = ("B", "KiB", "MiB", "GiB", "TiB", "PiB")
+    for unit in units:
+        if value < 1024 or unit == units[-1]:
+            return f"{int(value)} B" if unit == "B" else f"{value:.1f} {unit}"
+        value /= 1024
+    raise AssertionError("unreachable")
 
 
 def run_download(args: argparse.Namespace) -> int:
@@ -195,17 +265,19 @@ def run_download(args: argparse.Namespace) -> int:
     if args.dry_run:
         _dry_run(entries, outdir)
         return 0
-    failures = download_batch(entries, outdir, find_curl(), args.jobs, args.attempts)
+    failures = download_batch(entries, outdir, find_curl(), args.jobs, args.batch_attempts)
     return 3 if failures else 0
 
 
 def run_validate(args: argparse.Namespace) -> int:
-    errors = validate_archive(args.path.resolve())
+    validator = validate_metadata if args.metadata_only else validate_archive
+    errors = validator(args.path.resolve())
     if errors:
         for error in errors:
             print(error, file=sys.stderr)
         return 5
-    print(f"Archive is valid: {args.path}")
+    kind = "Metadata snapshot" if args.metadata_only else "Archive"
+    print(f"{kind} is valid: {args.path}")
     return 0
 
 
@@ -218,6 +290,7 @@ def main(argv: list[str] | None = None) -> int:
     parser = build_parser()
     try:
         args = parser.parse_args(argv)
+        args.invocation = ["ena-project", *(argv if argv is not None else sys.argv[1:])]
         return int(args.handler(args))
     except KeyboardInterrupt:
         return 130

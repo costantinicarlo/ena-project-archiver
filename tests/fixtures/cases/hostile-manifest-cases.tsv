@@ -1,0 +1,7 @@
+case	field	value	expected_error
+malicious_file_url	remote_url	file:///etc/passwd	Untrusted
+malicious_https_host	remote_url	https://example.org/file.fastq.gz	Untrusted
+path_traversal	local_relpath	../escape	canonical
+unsupported_schema	schema_version	99.0	Unsupported
+negative_bytes	size_bytes	-1	positive
+unknown_representation	representation	other	Unknown representation

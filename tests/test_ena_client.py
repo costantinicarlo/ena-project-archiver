@@ -1,8 +1,9 @@
+import os
 from urllib.error import URLError
 
 import pytest
 
-from ena_project.ena_client import EnaClient, EnaRequestError
+from ena_project.ena_client import FILEREPORT_FIELDS, EnaClient, EnaRequestError
 
 
 class HttpResponse:
@@ -44,3 +45,14 @@ def test_empty_public_result_is_distinct_from_request_failure() -> None:
     client = EnaClient(opener=lambda request, timeout: HttpResponse(b""))
     with pytest.raises(EnaRequestError, match="no public read_run records"):
         client.fetch_filereport("PRJEB999999999")
+
+
+@pytest.mark.skipif(
+    os.environ.get("ENA_LIVE_SCHEMA_TEST") != "1",
+    reason="set ENA_LIVE_SCHEMA_TEST=1 to query ENA returnFields",
+)
+def test_live_required_filereport_fields_are_still_supported() -> None:
+    response = EnaClient(timeout=30, attempts=2).fetch_return_fields()
+    rows = response.content.decode("utf-8-sig").splitlines()
+    available = {row.split("\t", 1)[0] for row in rows[1:] if row}
+    assert set(FILEREPORT_FIELDS) <= available

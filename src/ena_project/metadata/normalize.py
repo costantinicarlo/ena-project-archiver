@@ -8,17 +8,21 @@ import xml.etree.ElementTree as ET
 from collections.abc import Iterable, Mapping, Sequence
 from dataclasses import asdict
 from pathlib import Path
+from typing import TypeVar
 
+from ..accession import parse_accession
 from ..inventory import parse_filereport, write_inventory
 from ..models import ExperimentRecord, RunRecord, SampleAttribute, SampleRecord
 from .acquire import atomic_write
 from .schemas import (
     EXPERIMENT_COLUMNS,
+    PROJECT_SCHEMA_VERSION,
     RUN_COLUMNS,
     SAMPLE_ATTRIBUTE_COLUMNS,
     SAMPLE_COLUMNS,
-    SCHEMA_VERSION,
 )
+
+Record = TypeVar("Record")
 
 
 def _write_table(path: Path, columns: Sequence[str], rows: Iterable[Mapping[str, object]]) -> None:
@@ -76,6 +80,19 @@ def _study_details(xml_dir: Path) -> dict[str, str]:
     return details
 
 
+def _unique_by_accession(
+    records: Iterable[Record], accession_name: str, record_type: str
+) -> dict[str, Record]:
+    unique: dict[str, Record] = {}
+    for record in records:
+        accession = str(getattr(record, accession_name))
+        previous = unique.get(accession)
+        if previous is not None and previous != record:
+            raise ValueError(f"Conflicting {record_type} metadata for accession {accession}")
+        unique[accession] = record
+    return unique
+
+
 def normalize(
     metadata_dir: Path, input_accession: str, snapshot_id: str
 ) -> tuple[dict[str, int], str, str]:
@@ -94,14 +111,30 @@ def normalize(
             if row.get("secondary_study_accession")
         }
     )
-    project_accession = next(
-        (value for value in project_accessions if value.startswith("PRJ")), project_accessions[0]
-    )
+    if len(project_accessions) != 1:
+        raise ValueError(
+            "ENA acquisition contains incompatible canonical projects: "
+            + ", ".join(project_accessions)
+        )
+    project_accession = project_accessions[0]
+    if len(study_accessions) > 1:
+        raise ValueError(
+            f"BioProject {project_accession} contains multiple ENA Studies "
+            f"({', '.join(study_accessions)}). v0.1 archives one Study acquisition unit at a "
+            "time. Repeat the command using a specific ERP/SRP/DRP accession."
+        )
     study_accession = study_accessions[0] if study_accessions else project_accession
+    requested = parse_accession(input_accession)
+    represented = project_accessions if requested.kind == "project" else study_accessions
+    if requested.value not in represented:
+        raise ValueError(
+            f"ENA response identity does not match requested {requested.kind} accession "
+            f"{requested.value}: returned {sorted(represented)}"
+        )
     first = rows[0]
     study_details = _study_details(metadata_dir / "raw" / "xml" / "studies")
     project = {
-        "schema_version": SCHEMA_VERSION,
+        "schema_version": PROJECT_SCHEMA_VERSION,
         "input_accession": input_accession,
         "project_accession": project_accession,
         "study_accession": study_accession,
@@ -119,68 +152,80 @@ def normalize(
         derived / "project.json", (json.dumps(project, indent=2, sort_keys=True) + "\n").encode()
     )
 
-    samples = {
-        SampleRecord(
-            row.get("sample_accession", ""),
-            row.get("secondary_sample_accession", ""),
-            row.get("sample_alias", ""),
-            row.get("sample_title", ""),
-            row.get("tax_id", ""),
-            row.get("scientific_name", ""),
-            row.get("collection_date", ""),
-            row.get("country", ""),
-            row.get("location", ""),
-            row.get("first_public", ""),
-            row.get("last_updated", ""),
-        )
-        for row in rows
-        if row.get("sample_accession")
-    }
-    experiments = {
-        ExperimentRecord(
-            row.get("experiment_accession", ""),
-            study_accession,
-            row.get("sample_accession", ""),
-            row.get("secondary_sample_accession", ""),
-            row.get("experiment_alias", ""),
-            row.get("library_name", ""),
-            row.get("library_strategy", ""),
-            row.get("library_source", ""),
-            row.get("library_selection", ""),
-            row.get("library_layout", ""),
-            row.get("instrument_platform", ""),
-            row.get("instrument_model", ""),
-        )
-        for row in rows
-        if row.get("experiment_accession")
-    }
-    runs = {
-        RunRecord(
-            row.get("run_accession", ""),
-            row.get("experiment_accession", ""),
-            project_accession,
-            study_accession,
-            row.get("sample_accession", ""),
-            row.get("secondary_sample_accession", ""),
-            row.get("run_alias", ""),
-            row.get("library_strategy", ""),
-            row.get("library_source", ""),
-            row.get("library_layout", ""),
-            row.get("instrument_platform", ""),
-            row.get("instrument_model", ""),
-            row.get("base_count", ""),
-            row.get("read_count", ""),
-            row.get("first_public", ""),
-            row.get("last_updated", ""),
-        )
-        for row in rows
-        if row.get("run_accession")
-    }
+    samples = _unique_by_accession(
+        (
+            SampleRecord(
+                row.get("sample_accession", ""),
+                row.get("secondary_sample_accession", ""),
+                row.get("sample_alias", ""),
+                row.get("sample_title", ""),
+                row.get("tax_id", ""),
+                row.get("scientific_name", ""),
+                row.get("collection_date", ""),
+                row.get("country", ""),
+                row.get("location", ""),
+                row.get("first_public", ""),
+                row.get("last_updated", ""),
+            )
+            for row in rows
+            if row.get("sample_accession")
+        ),
+        "sample_accession",
+        "Sample",
+    )
+    experiments = _unique_by_accession(
+        (
+            ExperimentRecord(
+                row.get("experiment_accession", ""),
+                study_accession,
+                row.get("sample_accession", ""),
+                row.get("secondary_sample_accession", ""),
+                row.get("experiment_alias", ""),
+                row.get("library_name", ""),
+                row.get("library_strategy", ""),
+                row.get("library_source", ""),
+                row.get("library_selection", ""),
+                row.get("library_layout", ""),
+                row.get("instrument_platform", ""),
+                row.get("instrument_model", ""),
+            )
+            for row in rows
+            if row.get("experiment_accession")
+        ),
+        "experiment_accession",
+        "Experiment",
+    )
+    runs = _unique_by_accession(
+        (
+            RunRecord(
+                row.get("run_accession", ""),
+                row.get("experiment_accession", ""),
+                project_accession,
+                study_accession,
+                row.get("sample_accession", ""),
+                row.get("secondary_sample_accession", ""),
+                row.get("run_alias", ""),
+                row.get("library_strategy", ""),
+                row.get("library_source", ""),
+                row.get("library_layout", ""),
+                row.get("instrument_platform", ""),
+                row.get("instrument_model", ""),
+                row.get("base_count", ""),
+                row.get("read_count", ""),
+                row.get("first_public", ""),
+                row.get("last_updated", ""),
+            )
+            for row in rows
+            if row.get("run_accession")
+        ),
+        "run_accession",
+        "Run",
+    )
     attributes = _sample_attributes(metadata_dir / "raw" / "xml" / "samples")
     _write_table(
         derived / "samples.tsv",
         SAMPLE_COLUMNS,
-        (asdict(item) for item in sorted(samples, key=lambda item: item.sample_accession)),
+        (asdict(samples[key]) for key in sorted(samples)),
     )
     _write_table(
         derived / "sample_attributes.tsv",
@@ -190,12 +235,12 @@ def normalize(
     _write_table(
         derived / "experiments.tsv",
         EXPERIMENT_COLUMNS,
-        (asdict(item) for item in sorted(experiments, key=lambda item: item.experiment_accession)),
+        (asdict(experiments[key]) for key in sorted(experiments)),
     )
     _write_table(
         derived / "runs.tsv",
         RUN_COLUMNS,
-        (asdict(item) for item in sorted(runs, key=lambda item: item.run_accession)),
+        (asdict(runs[key]) for key in sorted(runs)),
     )
     files = parse_filereport(raw.read_bytes())
     write_inventory(files, derived / "files.tsv")

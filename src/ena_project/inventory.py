@@ -11,8 +11,14 @@ from pathlib import Path, PurePosixPath
 from typing import TextIO
 from urllib.parse import urlparse
 
-from .metadata.schemas import FILE_COLUMNS, REPRESENTATIONS, SCHEMA_VERSION
+from .metadata.schemas import (
+    FILE_COLUMNS,
+    INVENTORY_SCHEMA_VERSION,
+    REPRESENTATIONS,
+    require_supported_schema,
+)
 from .models import RemoteFile
+from .trust import validate_ena_download_url, validate_file_name, validate_run_accession
 
 
 class InventoryError(ValueError):
@@ -23,23 +29,24 @@ def _parts(value: str) -> list[str]:
     return value.split(";") if value else []
 
 
-def _download_url(remote_path: str) -> str:
+def ena_download_url(remote_path: str) -> str:
     if remote_path.startswith("ftp.sra.ebi.ac.uk/"):
         return f"https://{remote_path}"
     parsed = urlparse(remote_path)
     if parsed.scheme == "ftp" and parsed.hostname == "ftp.sra.ebi.ac.uk":
         return f"https://{parsed.netloc}{parsed.path}"
     if parsed.scheme == "https" and parsed.hostname == "ftp.sra.ebi.ac.uk":
-        return remote_path
+        return validate_ena_download_url(remote_path)
     raise InventoryError(f"Unexpected ENA file host or URL: {remote_path!r}")
 
 
 def _file_name(remote_path: str) -> str:
     path = urlparse(remote_path).path or remote_path
     name = PurePosixPath(path).name
-    if not name or name in {".", ".."} or any(ord(character) < 32 for character in name):
-        raise InventoryError(f"Unsafe or empty remote filename: {remote_path!r}")
-    return name
+    try:
+        return validate_file_name(name)
+    except ValueError as exc:
+        raise InventoryError(str(exc)) from exc
 
 
 def _size(value: str, context: str) -> int:
@@ -77,7 +84,7 @@ def explode_representation(row: Mapping[str, str], representation: str) -> list[
             raise InventoryError(f"{context}: invalid MD5 at index {index}: {md5!r}")
         records.append(
             RemoteFile(
-                schema_version=SCHEMA_VERSION,
+                schema_version=INVENTORY_SCHEMA_VERSION,
                 project_accession=row.get("study_accession", ""),
                 study_accession=row.get("secondary_study_accession", ""),
                 run_accession=row.get("run_accession", ""),
@@ -88,7 +95,7 @@ def explode_representation(row: Mapping[str, str], representation: str) -> list[
                 file_index=index,
                 file_name=_file_name(remote_path),
                 remote_path=remote_path,
-                download_url=_download_url(remote_path),
+                download_url=ena_download_url(remote_path),
                 size_bytes=_size(size, context),
                 md5=normalized_md5,
                 availability="available",
@@ -162,8 +169,13 @@ def read_inventory(path: Path) -> list[RemoteFile]:
             except (KeyError, ValueError) as exc:
                 raise InventoryError(f"Invalid files.tsv row {line_number}: {exc}") from exc
             record = records[-1]
-            if record.schema_version.split(".")[0] != SCHEMA_VERSION.split(".")[0]:
-                raise InventoryError(f"Unsupported schema at row {line_number}")
+            try:
+                require_supported_schema(
+                    record.schema_version, INVENTORY_SCHEMA_VERSION, "inventory"
+                )
+                validate_run_accession(record.run_accession)
+            except ValueError as exc:
+                raise InventoryError(f"Row {line_number}: {exc}") from exc
             if record.representation not in REPRESENTATIONS:
                 raise InventoryError(f"Invalid representation at row {line_number}")
             if record.availability != "available":
@@ -174,7 +186,10 @@ def read_inventory(path: Path) -> list[RemoteFile]:
                 raise InventoryError(f"Invalid MD5 at row {line_number}")
             if _file_name(record.file_name) != record.file_name:
                 raise InventoryError(f"Invalid filename at row {line_number}")
-            _download_url(record.download_url)
+            try:
+                validate_ena_download_url(record.download_url)
+            except ValueError as exc:
+                raise InventoryError(f"Row {line_number}: {exc}") from exc
     return records
 
 

@@ -5,13 +5,24 @@ from __future__ import annotations
 import csv
 from collections.abc import Iterable, Mapping
 from dataclasses import asdict
-from pathlib import Path, PurePosixPath
+from pathlib import Path
 from typing import TextIO
 
 from .inventory import read_inventory
-from .metadata.schemas import MANIFEST_COLUMNS, SCHEMA_VERSION
+from .metadata.schemas import (
+    MANIFEST_COLUMNS,
+    MANIFEST_SCHEMA_VERSION,
+    REPRESENTATIONS,
+    require_supported_schema,
+)
 from .models import ManifestEntry, RemoteFile
-from .selection import select_files
+from .selection import POLICIES, select_files
+from .trust import (
+    canonical_local_relpath,
+    validate_ena_download_url,
+    validate_file_name,
+    validate_run_accession,
+)
 
 
 class ManifestError(ValueError):
@@ -19,14 +30,12 @@ class ManifestError(ValueError):
 
 
 def safe_local_relpath(record: RemoteFile) -> str:
-    if not record.run_accession or "/" in record.run_accession or "\\" in record.run_accession:
-        raise ManifestError(f"Unsafe Run accession: {record.run_accession!r}")
-    name = PurePosixPath(record.file_name)
-    if name.is_absolute() or len(name.parts) != 1 or name.name in {"", ".", ".."}:
-        raise ManifestError(f"Unsafe remote filename: {record.file_name!r}")
-    if any(ord(character) < 32 for character in record.file_name):
-        raise ManifestError(f"Control character in remote filename: {record.file_name!r}")
-    return f"{record.representation}/{record.run_accession}/{record.file_name}"
+    try:
+        return canonical_local_relpath(
+            record.representation, record.run_accession, record.file_name
+        )
+    except ValueError as exc:
+        raise ManifestError(str(exc)) from exc
 
 
 def build_manifest(
@@ -42,7 +51,7 @@ def build_manifest(
         run = metadata.get(record.run_accession, {})
         entries.append(
             ManifestEntry(
-                schema_version=SCHEMA_VERSION,
+                schema_version=MANIFEST_SCHEMA_VERSION,
                 project_accession=record.project_accession,
                 study_accession=record.study_accession,
                 run_accession=record.run_accession,
@@ -116,6 +125,8 @@ def read_manifest(path: Path) -> list[ManifestEntry]:
         if tuple(reader.fieldnames or ()) != MANIFEST_COLUMNS:
             raise ManifestError("Unsupported manifest columns")
         entries = []
+        identities: set[tuple[str, str, int]] = set()
+        local_paths: set[str] = set()
         for line_number, row in enumerate(reader, 2):
             try:
                 values = dict(row)
@@ -124,8 +135,39 @@ def read_manifest(path: Path) -> list[ManifestEntry]:
                 entry = ManifestEntry(**values)
             except (TypeError, ValueError) as exc:
                 raise ManifestError(f"Invalid manifest row {line_number}: {exc}") from exc
-            expected = PurePosixPath(entry.local_relpath)
-            if expected.is_absolute() or ".." in expected.parts or len(expected.parts) < 3:
-                raise ManifestError(f"Unsafe local_relpath at row {line_number}")
+            try:
+                require_supported_schema(entry.schema_version, MANIFEST_SCHEMA_VERSION, "manifest")
+                if entry.representation not in REPRESENTATIONS:
+                    raise ValueError(f"Unknown representation: {entry.representation!r}")
+                if entry.selection_policy not in POLICIES:
+                    raise ValueError(f"Unknown selection policy: {entry.selection_policy!r}")
+                if entry.file_index <= 0:
+                    raise ValueError("file_index must be positive")
+                if entry.size_bytes <= 0:
+                    raise ValueError("size_bytes must be positive")
+                if len(entry.md5) != 32 or any(
+                    character not in "0123456789abcdef" for character in entry.md5
+                ):
+                    raise ValueError(f"Invalid MD5: {entry.md5!r}")
+                validate_run_accession(entry.run_accession)
+                validate_file_name(entry.file_name)
+                validate_ena_download_url(entry.remote_url)
+                canonical = canonical_local_relpath(
+                    entry.representation, entry.run_accession, entry.file_name
+                )
+                if entry.local_relpath != canonical:
+                    raise ValueError(
+                        f"local_relpath must be canonical {canonical!r}, got "
+                        f"{entry.local_relpath!r}"
+                    )
+            except ValueError as exc:
+                raise ManifestError(f"Invalid manifest row {line_number}: {exc}") from exc
+            identity = (entry.run_accession, entry.representation, entry.file_index)
+            if identity in identities:
+                raise ManifestError(f"Duplicate manifest file identity at row {line_number}")
+            if entry.local_relpath in local_paths:
+                raise ManifestError(f"Duplicate local_relpath at row {line_number}")
+            identities.add(identity)
+            local_paths.add(entry.local_relpath)
             entries.append(entry)
     return entries

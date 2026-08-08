@@ -1,0 +1,6 @@
+case	input_accession	project_accession	study_accession	expected
+ena_project	PRJEB1	PRJEB1	ERP000001	valid
+ncbi_project	PRJNA2	PRJNA2	SRP000002	valid
+ddbj_project	PRJDB3	PRJDB3	DRP000003	valid
+multi_study	PRJEB4	PRJEB4	ERP000004;ERP000005	reject
+inconsistent_requested	PRJEB999	PRJEB1	ERP000001	reject
