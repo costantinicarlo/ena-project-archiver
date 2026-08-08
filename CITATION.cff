@@ -1,0 +1,16 @@
+cff-version: 1.2.0
+title: ENA Project Archiver
+message: If you use this software, please cite it using this metadata.
+type: software
+authors:
+  - family-names: Costantini
+    given-names: Carlo
+license: MIT
+version: 0.2.0
+date-released: 2026-08-08
+repository-code: https://github.com/costantinicarlo/ena-project-archiver
+keywords:
+  - ENA
+  - genomics
+  - archival data
+  - reproducibility

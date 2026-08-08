@@ -42,9 +42,10 @@ ruff check src tests
 OUTDIR=/path/to/PRJEB123456/sources/ena
 
 ena-project snapshot PRJEB123456 --outdir "$OUTDIR"
-ena-project validate "$OUTDIR"
+ena-project validate "$OUTDIR" --metadata-only
 ena-project download "$OUTDIR/manifest.tsv" --outdir "$OUTDIR" --dry-run
-ena-project download "$OUTDIR/manifest.tsv" --outdir "$OUTDIR" --jobs 2
+ena-project download "$OUTDIR/manifest.tsv" --outdir "$OUTDIR" \
+  --jobs 2 --batch-attempts 3
 ena-project validate "$OUTDIR"
 ```
 
@@ -79,7 +80,7 @@ ena-project metadata ACCESSION --outdir PATH
 ena-project snapshot ACCESSION --outdir PATH [--representation POLICY]
 ena-project manifest FILES.TSV --output MANIFEST.TSV [--representation POLICY]
 ena-project download ACCESSION|MANIFEST.TSV --outdir PATH [--dry-run]
-ena-project validate PATH
+ena-project validate PATH [--metadata-only]
 ena-project metadata-normalize --metadata-dir PATH/metadata
 ```
 
@@ -89,7 +90,10 @@ Policies are `archival`, `submitted`, `fastq`, `sra`, and `all`. Exit statuses a
 
 See [docs/design.md](docs/design.md), [docs/tutorial.md](docs/tutorial.md), and
 [docs/troubleshooting.md](docs/troubleshooting.md). Contract coverage is recorded in
-[docs/compliance-matrix.md](docs/compliance-matrix.md).
+[docs/compliance-matrix.md](docs/compliance-matrix.md) against the authoritative
+[specification](docs/SPECIFICATION.md). `validate --metadata-only` checks snapshot structure and
+relationships before sequence acquisition; plain `validate` additionally requires every manifest
+object to exist with the advertised size and MD5.
 
 ## License
 
