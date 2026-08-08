@@ -94,4 +94,4 @@ See [docs/design.md](docs/design.md), [docs/tutorial.md](docs/tutorial.md), and
 ## License
 
 MIT. ENA metadata and downloaded scientific records retain their own provenance and terms.
-
+See [LICENSE](LICENSE) for the full text.
