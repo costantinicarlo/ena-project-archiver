@@ -1,0 +1,1 @@
+"""Metadata acquisition and normalization."""

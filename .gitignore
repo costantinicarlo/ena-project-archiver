@@ -1,0 +1,27 @@
+.DS_Store
+.venv/
+venv/
+__pycache__/
+*.py[cod]
+*.egg-info/
+.pytest_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+build/
+dist/
+
+# Runtime archive products at the repository root.
+/manifest.tsv
+/metadata/
+/submitted/
+/fastq/
+/sra/
+/superseded/
+/tmp/
+/logs/
+/.metadata-staging-*/
+/.metadata-old-*/
+/.manifest-old-*.tsv
+*.part
+*.bad.*
