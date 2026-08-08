@@ -1,9 +1,6 @@
 # ENA Project Archiver
 
-`ena-project` creates reproducible, provenance-preserving local archives of public raw-read
-projects from the European Nucleotide Archive (ENA). It accepts `PRJEB`, `PRJNA`, `PRJDB`, `ERP`,
-`SRP`, and `DRP` project or Study accessions and keeps ENA acquisition separate from NCBI
-provenance.
+`ena-project` creates reproducible, provenance-preserving local archives of public raw-read projects from the European Nucleotide Archive (ENA). It accepts `PRJEB`, `PRJNA`, `PRJDB`, `ERP`, `SRP`, and `DRP` project or Study accessions and keeps ENA acquisition separate from NCBI provenance.
 
 The archive records a chain of evidence:
 
@@ -11,11 +8,7 @@ The archive records a chain of evidence:
 raw ENA responses -> complete file inventory -> selection policy -> manifest -> verified files
 ```
 
-ENA can expose original submitted objects, archive-generated FASTQ, and SRA representations for
-the same Run. Submitted data can be FASTQ, BAM, CRAM, FAST5, or another accepted format. The
-default `archival` policy therefore chooses every submitted file for a Run, falls back to SRA only
-when submitted files are genuinely unavailable, then falls back to generated FASTQ. Advertised
-but malformed submitted metadata is an error, never a reason to fall back.
+ENA can expose original submitted objects, archive-generated FASTQ, and SRA representations for the same Run. Submitted data can be FASTQ, BAM, CRAM, FAST5, or another accepted format. The default `archival` policy therefore chooses every submitted file for a Run, falls back to SRA only when submitted files are genuinely unavailable, then falls back to generated FASTQ. Advertised but malformed submitted metadata is an error, never a reason to fall back.
 
 ## Installation
 
@@ -49,29 +42,22 @@ ena-project download "$OUTDIR/manifest.tsv" --outdir "$OUTDIR" \
 ena-project validate "$OUTDIR"
 ```
 
-Use `metadata` instead of `snapshot` to preserve and normalize metadata without making a manifest.
-Use `manifest` to select a different representation entirely offline:
+Use `metadata` instead of `snapshot` to preserve and normalize metadata without making a manifest. Use `manifest` to select a different representation entirely offline:
 
 ```bash
 ena-project manifest "$OUTDIR/metadata/derived/files.tsv" \
   --representation fastq --output /path/to/fastq-manifest.tsv
 ```
 
-`files.tsv` is ENA's complete reported inventory. `manifest.tsv` is a policy decision derived from
-that inventory. Changing policy never changes the inventory.
+`files.tsv` is ENA's complete reported inventory. `manifest.tsv` is a policy decision derived from that inventory. Changing policy never changes the inventory.
 
 ## Integrity and recovery
 
-Sequence objects are written to `<filename>.part`, resumed by curl, checked against the ENA byte
-count and MD5, and atomically renamed. MD5 identifies the exact repository object advertised by
-ENA. Snapshot artifacts additionally use SHA-256 to protect the local provenance ledger.
+Sequence objects are written to `<filename>.part`, resumed by curl, checked against the ENA byte count and MD5, and atomically renamed. MD5 identifies the exact repository object advertised by ENA. Snapshot artifacts additionally use SHA-256 to protect the local provenance ledger.
 
-Existing verified files are skipped. Unrecognized corrupt files become `.bad.<timestamp>`. If an
-existing file matches a previous manifest but ENA now advertises a new checksum at the same path,
-the old valid object moves to `superseded/<snapshot-id>/` before reacquisition.
+Existing verified files are skipped. Unrecognized corrupt files become `.bad.<timestamp>`. If an existing file matches a previous manifest but ENA now advertises a new checksum at the same path, the old valid object moves to `superseded/<snapshot-id>/` before reacquisition.
 
-`--refresh` stages a complete replacement and archives the previous metadata plus its manifest
-under `metadata/archive/<snapshot-id>/`. A failed refresh leaves the current snapshot untouched.
+`--refresh` stages a complete replacement and archives the previous metadata plus its manifest under `metadata/archive/<snapshot-id>/`. A failed refresh leaves the current snapshot untouched.
 
 ## Commands
 
@@ -84,19 +70,10 @@ ena-project validate PATH [--metadata-only]
 ena-project metadata-normalize --metadata-dir PATH/metadata
 ```
 
-Policies are `archival`, `submitted`, `fastq`, `sra`, and `all`. Exit statuses are `0` success,
-`1` runtime failure, `2` invalid input/configuration, `3` required retrieval or download incomplete,
-`4` usable partial metadata, `5` normalization/validation failure, and `130` interruption.
+Policies are `archival`, `submitted`, `fastq`, `sra`, and `all`. Exit statuses are `0` success, `1` runtime failure, `2` invalid input/configuration, `3` required retrieval or download incomplete, `4` usable partial metadata, `5` normalization/validation failure, and `130` interruption.
 
-See [docs/design.md](docs/design.md), [docs/quickstart.md](docs/quickstart.md),
-[docs/tutorial-publication-to-local-ena-project.md](docs/tutorial-publication-to-local-ena-project.md),
-and [docs/troubleshooting.md](docs/troubleshooting.md). Contract coverage is recorded in
-[docs/compliance-matrix.md](docs/compliance-matrix.md) against the authoritative
-[specification](docs/SPECIFICATION.md). `validate --metadata-only` checks snapshot structure and
-relationships before sequence acquisition; plain `validate` additionally requires every manifest
-object to exist with the advertised size and MD5.
+See [docs/design.md](docs/design.md), [docs/quickstart.md](docs/quickstart.md), [docs/tutorial-publication-to-local-ena-project.md](docs/tutorial-publication-to-local-ena-project.md), and [docs/troubleshooting.md](docs/troubleshooting.md). Contract coverage is recorded in [docs/compliance-matrix.md](docs/compliance-matrix.md) against the authoritative [specification](docs/SPECIFICATION.md). `validate --metadata-only` checks snapshot structure and relationships before sequence acquisition; plain `validate` additionally requires every manifest object to exist with the advertised size and MD5.
 
 ## License
 
-MIT. ENA metadata and downloaded scientific records retain their own provenance and terms.
-See [LICENSE](LICENSE) for the full text.
+MIT. ENA metadata and downloaded scientific records retain their own provenance and terms. See [LICENSE](LICENSE) for the full text.
