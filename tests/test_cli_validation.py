@@ -116,6 +116,14 @@ def test_accession_download_rebuilds_requested_policy_offline(tmp_path: Path, ca
         "fastq"
     }
     assert "Selected files: 3" in capsys.readouterr().out
+    assert main(["validate", str(tmp_path), "--metadata-only"]) == 0
+
+
+def test_accession_download_refuses_invalid_matching_snapshot(tmp_path: Path) -> None:
+    create_snapshot("PRJEB1", tmp_path, client=FakeClient(), policy="archival", now=fixed_now)
+    runs_path = tmp_path / "metadata/derived/runs.tsv"
+    runs_path.write_text(runs_path.read_text().replace("ERR1", "ERR999", 1))
+    assert main(["download", "PRJEB1", "--outdir", str(tmp_path), "--dry-run"]) == 5
 
 
 def test_metadata_only_snapshot_generates_manifest_offline_for_alias(

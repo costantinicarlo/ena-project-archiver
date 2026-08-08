@@ -173,6 +173,12 @@ def _load_download_input(args: argparse.Namespace, outdir: Path):
             f"Requested accession {accession.value} does not identify the local snapshot "
             f"({', '.join(sorted(value for value in aliases if value))})"
         )
+    metadata_errors = validate_metadata(outdir)
+    if metadata_errors:
+        raise ManifestError(
+            "Local metadata snapshot is invalid; use explicit --refresh after preserving "
+            "diagnostic evidence:\n" + "\n".join(metadata_errors)
+        )
     existing = read_manifest(manifest) if manifest.is_file() else []
     policies = {entry.selection_policy for entry in existing}
     if existing and policies == {args.representation}:
