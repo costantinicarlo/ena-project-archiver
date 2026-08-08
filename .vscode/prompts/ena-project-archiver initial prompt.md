@@ -28,7 +28,7 @@ ena_project
 
 A complete normative specification follows this instruction. Treat that specification as the authoritative software contract.
 
-# Governing rule
+## Governing rule
 
 Implement the specification **verbatim in meaning and behavior**.
 
@@ -64,7 +64,7 @@ If two requirements appear to conflict, inspect the surrounding specification ca
 
 Do not change the contract merely because another implementation would be easier.
 
-# Relationship with the existing NCBI application
+## Relationship with the existing NCBI application
 
 Before implementing substantial code, inspect:
 
@@ -134,7 +134,7 @@ Do not attempt to extract a shared library between the repositories at this stag
 
 Some duplication is explicitly acceptable.
 
-# Primary architectural principle
+## Primary architectural principle
 
 Maintain a strict distinction between:
 
@@ -170,7 +170,7 @@ MUST NOT be treated as equivalent.
 
 A change of acquisition policy MUST NOT alter the repository inventory generated from the same metadata snapshot.
 
-# Critical ENA-specific rules
+## Critical ENA-specific rules
 
 Pay particular attention to the following requirements. These are easy to implement incorrectly and are central to the application.
 
@@ -256,7 +256,7 @@ Do NOT quarantine it as corrupt.
 
 Use `.bad.<timestamp>` only when a file fails to match both the current expected object and a recognized historical manifest.
 
-# Implementation strategy
+## Implementation strategy
 
 Work incrementally.
 
@@ -666,7 +666,7 @@ Never create `/Volumes/<missing-volume>` and accidentally fill the system disk
 
 Maintain ordinary Linux portability.
 
-# Filesystem safety
+## Filesystem safety
 
 Treat every remote filename as untrusted input.
 
@@ -688,7 +688,7 @@ Prefer argument arrays with `subprocess`.
 
 Do not use `shell=True` unless an exceptional reason is documented and safely handled.
 
-# Determinism
+## Determinism
 
 Given identical raw metadata, tool version and acquisition policy, normalized data and manifests must be deterministic.
 
@@ -706,7 +706,7 @@ Add tests that regenerate artifacts twice and compare bytes.
 
 Do not embed current timestamps into artifacts that are supposed to be deterministic except where the specification explicitly defines timestamps as provenance.
 
-# Testing requirements
+## Testing requirements
 
 Use fixture-driven tests extensively.
 
@@ -745,7 +745,7 @@ A small opt-in live ENA smoke-test suite MAY exist separately.
 
 Normal CI MUST remain independent of ENA availability.
 
-# Documentation
+## Documentation
 
 Create documentation appropriate for a scientific open-source repository.
 
@@ -785,7 +785,7 @@ Write for biologists and bioinformaticians, not only software engineers.
 
 Avoid documentation that resembles a slide deck composed almost entirely of bullet points.
 
-# Git discipline
+## Git discipline
 
 Work on a dedicated feature branch if this is an existing Git repository.
 
@@ -817,7 +817,7 @@ Do not commit:
 
 - machine-specific paths.
 
-# Do not over-engineer
+## Do not over-engineer
 
 Do not introduce:
 
@@ -841,7 +841,7 @@ The v0.1 goal is a robust command-line scientific archiver, not a framework.
 
 Likewise, do not prematurely build a common NCBI/ENA library.
 
-# Dependency policy
+## Dependency policy
 
 Prefer the Python standard library where practical.
 
@@ -858,7 +858,7 @@ curl
 
 Optional future SRA validation must not become an undeclared mandatory dependency.
 
-# Error-handling philosophy
+## Error-handling philosophy
 
 Never turn uncertainty into silent success.
 
@@ -878,7 +878,7 @@ repository object revised
 
 These conditions have different archival meanings and should remain distinguishable in code, logs, metadata state and exit behavior.
 
-# Work protocol
+## Work protocol
 
 Proceed autonomously.
 
@@ -910,7 +910,7 @@ If a feature cannot be completed, leave the repository in a coherent, tested sta
 
 Do not claim a requirement is complete unless it is implemented and tested.
 
-# Final verification
+## Final verification
 
 Before declaring the implementation complete, create a compliance matrix mapping every numbered section of the specification to:
 
@@ -953,7 +953,7 @@ Perform at least one small real ENA metadata/snapshot smoke test if network acce
 
 Do NOT download a large sequencing project merely to demonstrate functionality.
 
-# Expected final report
+## Expected final report
 
 At completion, report:
 
@@ -981,7 +981,7 @@ Do not provide only a prose claim that the software is complete. Ground the repo
 
 ---
 
-# AUTHORITATIVE SPECIFICATION
+## AUTHORITATIVE SPECIFICATION
 
 The document in .vscode/instructions/ena-project-archiver contract.md is the normative contract.
 

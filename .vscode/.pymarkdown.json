@@ -4,7 +4,7 @@
       "enabled": false
     },
     "md025": {
-      "enabled": false
+      "enabled": true
     },
     "md024": {
       "siblings_only": true
