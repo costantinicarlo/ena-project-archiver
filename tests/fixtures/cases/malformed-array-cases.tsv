@@ -1,0 +1,6 @@
+case	field	value	expected_error
+url_md5_cardinality	submitted_md5	900150983cd24fb0d6963f7d28e17f72	malformed file arrays
+url_byte_cardinality	submitted_bytes	3;4;5	malformed file arrays
+invalid_md5	submitted_md5	not-an-md5;d41d8cd98f00b204e9800998ecf8427e	invalid MD5
+invalid_byte_count	submitted_bytes	three;4	invalid byte count
+empty_array_member	submitted_ftp	ftp.sra.ebi.ac.uk/a;;ftp.sra.ebi.ac.uk/c	malformed file arrays

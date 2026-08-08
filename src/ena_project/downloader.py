@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import concurrent.futures
+import functools
 import hashlib
 import logging
 import os
@@ -57,17 +58,36 @@ def safe_destination(outdir: Path, local_relpath: str) -> Path:
     return destination
 
 
-def historical_entries(outdir: Path, local_relpath: str) -> list[tuple[str, ManifestEntry]]:
-    matches = []
+HistoryIndex = dict[str, tuple[tuple[str, ManifestEntry], ...]]
+
+
+def build_history_index(outdir: Path) -> HistoryIndex:
+    matches: dict[str, list[tuple[str, ManifestEntry]]] = {}
     archive = outdir / "metadata" / "archive"
     if not archive.is_dir():
-        return matches
+        return {}
     for manifest_path in sorted(archive.glob("*/manifest.tsv")):
         snapshot_id = manifest_path.parent.name
         for entry in read_manifest(manifest_path):
-            if entry.local_relpath == local_relpath:
-                matches.append((snapshot_id, entry))
-    return matches
+            matches.setdefault(entry.local_relpath, []).append((snapshot_id, entry))
+    return {key: tuple(values) for key, values in matches.items()}
+
+
+def _preserve_superseded(
+    source: Path, outdir: Path, snapshot_id: str, historical: ManifestEntry
+) -> Path:
+    suffix = 0
+    while True:
+        preserved_id = snapshot_id if suffix == 0 else f"{snapshot_id}-{suffix:02d}"
+        target = safe_destination(outdir, f"superseded/{preserved_id}/{historical.local_relpath}")
+        if not target.exists():
+            target.parent.mkdir(parents=True, exist_ok=True)
+            source.replace(target)
+            return target
+        if verify_file(target, historical):
+            source.unlink()
+            return target
+        suffix += 1
 
 
 def _quarantine(path: Path, timestamp: Callable[[], float]) -> Path:
@@ -84,6 +104,7 @@ def download_one(
     *,
     run_command: Callable[..., subprocess.CompletedProcess] = subprocess.run,
     timestamp: Callable[[], float] = time.time,
+    history_index: HistoryIndex | None = None,
 ) -> Path:
     destination = safe_destination(outdir, entry.local_relpath)
     destination.parent.mkdir(parents=True, exist_ok=True)
@@ -91,19 +112,18 @@ def download_one(
         LOGGER.info("Verified existing file; skipping %s", entry.local_relpath)
         return destination
     if destination.exists():
+        history = history_index if history_index is not None else build_history_index(outdir)
         historical = next(
             (
                 (snapshot_id, old)
-                for snapshot_id, old in historical_entries(outdir, entry.local_relpath)
+                for snapshot_id, old in history.get(entry.local_relpath, ())
                 if verify_file(destination, old)
             ),
             None,
         )
         if historical is not None:
-            snapshot_id, _ = historical
-            superseded = safe_destination(outdir, f"superseded/{snapshot_id}/{entry.local_relpath}")
-            superseded.parent.mkdir(parents=True, exist_ok=True)
-            destination.replace(superseded)
+            snapshot_id, old = historical
+            superseded = _preserve_superseded(destination, outdir, snapshot_id, old)
             LOGGER.info("Preserved repository revision at %s", superseded)
         else:
             _quarantine(destination, timestamp)
@@ -152,11 +172,17 @@ def download_batch(
     if jobs <= 0 or attempts <= 0:
         raise ValueError("jobs and attempts must be positive")
     pending = list(entries)
+    transaction_download = download
+    if download is download_one:
+        transaction_download = functools.partial(
+            download_one, history_index=build_history_index(outdir)
+        )
     for attempt in range(1, attempts + 1):
         failures = []
         with concurrent.futures.ThreadPoolExecutor(max_workers=jobs) as executor:
             futures = {
-                executor.submit(download, entry, outdir, curl_path): entry for entry in pending
+                executor.submit(transaction_download, entry, outdir, curl_path): entry
+                for entry in pending
             }
             for future in concurrent.futures.as_completed(futures):
                 entry = futures[future]

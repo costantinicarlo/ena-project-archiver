@@ -1,0 +1,9 @@
+case	run_accession	submitted_ftp	submitted_md5	submitted_bytes	fastq_ftp	fastq_md5	fastq_bytes	sra_ftp	sra_md5	sra_bytes	expected
+single_submitted_fastq	ERR100	ftp.sra.ebi.ac.uk/ERR100/original.fastq.gz	900150983cd24fb0d6963f7d28e17f72	3							submitted:1
+paired_submitted_fastq	ERR101	ftp.sra.ebi.ac.uk/ERR101/R1.fastq.gz;ftp.sra.ebi.ac.uk/ERR101/R2.fastq.gz	900150983cd24fb0d6963f7d28e17f72;e2fc714c4727ee9395f324cd2e7f331f	3;4							submitted:2
+three_generated_fastq	ERR102				ftp.sra.ebi.ac.uk/ERR102/ERR102_1.fastq.gz;ftp.sra.ebi.ac.uk/ERR102/ERR102_2.fastq.gz;ftp.sra.ebi.ac.uk/ERR102/ERR102.fastq.gz	900150983cd24fb0d6963f7d28e17f72;e2fc714c4727ee9395f324cd2e7f331f;0cc175b9c0f1b6a831c399e269772661	3;4;1				fastq:3
+submitted_bam	ERR103	ftp.sra.ebi.ac.uk/ERR103/original.bam	900150983cd24fb0d6963f7d28e17f72	3							submitted:1
+sra_only_cross_insdc	SRR104							ftp.sra.ebi.ac.uk/SRR104/SRR104	900150983cd24fb0d6963f7d28e17f72	3	sra:1
+missing_submitted	ERR105				ftp.sra.ebi.ac.uk/ERR105/ERR105.fastq.gz	900150983cd24fb0d6963f7d28e17f72	3	ftp.sra.ebi.ac.uk/ERR105/ERR105	900150983cd24fb0d6963f7d28e17f72	3	fastq:1,sra:1
+missing_generated_fastq	ERR106	ftp.sra.ebi.ac.uk/ERR106/original.fastq.gz	900150983cd24fb0d6963f7d28e17f72	3				ftp.sra.ebi.ac.uk/ERR106/ERR106	900150983cd24fb0d6963f7d28e17f72	3	sra:1,submitted:1
+only_one_usable	ERR107							ftp.sra.ebi.ac.uk/ERR107/ERR107	900150983cd24fb0d6963f7d28e17f72	3	sra:1

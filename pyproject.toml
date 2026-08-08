@@ -4,12 +4,14 @@ build-backend = "setuptools.build_meta"
 
 [project]
 name = "ena-project-archiver"
-version = "0.1.0"
+version = "0.2.0"
 description = "Reproducible archival acquisition of ENA raw-read projects"
 readme = "README.md"
 requires-python = ">=3.9"
 license = "MIT"
+license-files = ["LICENSE"]
 authors = [{name = "Carlo Costantini"}]
+dependencies = []
 classifiers = [
   "Development Status :: 3 - Alpha",
   "Environment :: Console",

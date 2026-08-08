@@ -1,0 +1,9 @@
+case	expected
+snapshot_id_collision	distinct snapshot IDs
+failed_staged_refresh	current snapshot and manifest unchanged
+orphan_manifest	refuse acquisition without deleting manifest
+duplicate_conflicting_sample	reject normalization
+duplicate_conflicting_experiment	reject normalization
+duplicate_conflicting_run	reject normalization
+duplicate_inventory_file_index	reject structural validation
+superseded_destination_collision	preserve both historical objects

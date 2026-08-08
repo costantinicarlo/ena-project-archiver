@@ -5,7 +5,13 @@ from pathlib import Path
 
 import pytest
 
-from ena_project.downloader import download_batch, download_one, validate_destination, verify_file
+from ena_project.downloader import (
+    build_history_index,
+    download_batch,
+    download_one,
+    validate_destination,
+    verify_file,
+)
 from ena_project.manifest import write_manifest
 from ena_project.models import ManifestEntry
 
@@ -95,6 +101,35 @@ def test_historical_valid_object_is_superseded_not_quarantined(tmp_path: Path) -
     download_one(current, tmp_path, "curl", run_command=fake_run, timestamp=lambda: 7)
     assert (tmp_path / "superseded/20260101T000000Z" / current.local_relpath).read_bytes() == b"old"
     assert not list(destination.parent.glob("*.bad.*"))
+
+
+def test_superseded_historical_object_cannot_be_overwritten(tmp_path: Path) -> None:
+    old = entry(b"old")
+    current = entry(b"new")
+    old_manifest = tmp_path / "metadata/archive/20260101T000000Z/manifest.tsv"
+    write_manifest([old], old_manifest)
+    destination = tmp_path / current.local_relpath
+    destination.parent.mkdir(parents=True)
+    destination.write_bytes(b"old")
+    occupied = tmp_path / "superseded/20260101T000000Z" / current.local_relpath
+    occupied.parent.mkdir(parents=True)
+    occupied.write_bytes(b"different-valid-history")
+
+    def fake_run(command: list[str], check: bool) -> subprocess.CompletedProcess:
+        Path(command[command.index("--output") + 1]).write_bytes(b"new")
+        return subprocess.CompletedProcess(command, 0)
+
+    download_one(
+        current,
+        tmp_path,
+        "curl",
+        run_command=fake_run,
+        history_index=build_history_index(tmp_path),
+    )
+    assert occupied.read_bytes() == b"different-valid-history"
+    assert (
+        tmp_path / "superseded/20260101T000000Z-01" / current.local_relpath
+    ).read_bytes() == b"old"
 
 
 def test_batch_collects_failures_and_retries_only_failures(tmp_path: Path) -> None:

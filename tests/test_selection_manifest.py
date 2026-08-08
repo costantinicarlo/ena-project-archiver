@@ -1,14 +1,22 @@
+import csv
 from dataclasses import replace
 from pathlib import Path
 
 import pytest
 
 from ena_project.inventory import parse_filereport
-from ena_project.manifest import ManifestError, build_manifest, write_manifest
+from ena_project.manifest import ManifestError, build_manifest, read_manifest, write_manifest
 from ena_project.models import RemoteFile
 from ena_project.selection import SelectionError, select_files
 
 FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def hostile_cases() -> list[dict[str, str]]:
+    with (FIXTURES / "cases" / "hostile-manifest-cases.tsv").open(
+        encoding="utf-8", newline=""
+    ) as handle:
+        return list(csv.DictReader(handle, delimiter="\t"))
 
 
 def remote(run: str, representation: str, name: str = "same.fastq.gz") -> RemoteFile:
@@ -102,3 +110,23 @@ def test_submitted_bam_and_sra_only_runs_retain_repository_filenames() -> None:
 def test_run_without_any_representation_fails() -> None:
     with pytest.raises(SelectionError, match="no archival representation available"):
         select_files([], run_accessions=["ERR1"])
+
+
+@pytest.mark.parametrize("case", hostile_cases(), ids=lambda row: row["case"])
+def test_read_manifest_rejects_hostile_rows(tmp_path: Path, case: dict[str, str]) -> None:
+    entry = build_manifest([remote("ERR1", "submitted")])[0]
+    path = tmp_path / "manifest.tsv"
+    value: object = case["value"]
+    if case["field"] in {"file_index", "size_bytes"}:
+        value = int(case["value"])
+    write_manifest([replace(entry, **{case["field"]: value})], path)
+    with pytest.raises(ManifestError, match=case["expected_error"]):
+        read_manifest(path)
+
+
+def test_read_manifest_rejects_duplicate_destinations(tmp_path: Path) -> None:
+    entry = build_manifest([remote("ERR1", "submitted")])[0]
+    path = tmp_path / "manifest.tsv"
+    write_manifest([entry, entry], path)
+    with pytest.raises(ManifestError, match="Duplicate manifest file identity"):
+        read_manifest(path)

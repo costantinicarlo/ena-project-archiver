@@ -1,6 +1,29 @@
-"""Stable schema versions and column order."""
+"""Stable schema versions, compatibility checks, and column order."""
 
-SCHEMA_VERSION = "1.0"
+PROJECT_SCHEMA_VERSION = "1.0"
+INVENTORY_SCHEMA_VERSION = "1.0"
+MANIFEST_SCHEMA_VERSION = "1.0"
+SNAPSHOT_SCHEMA_VERSION = "1.1"
+NORMALIZED_TABLE_SCHEMA_VERSION = "1.0"
+
+# Compatibility alias for callers that predate independent schema versions.
+SCHEMA_VERSION = INVENTORY_SCHEMA_VERSION
+
+
+def schema_major(version: str) -> int:
+    try:
+        major, minor = version.split(".", 1)
+        if not major.isdigit() or not minor.isdigit():
+            raise ValueError
+        return int(major)
+    except (AttributeError, ValueError) as exc:
+        raise ValueError(f"Invalid schema version: {version!r}") from exc
+
+
+def require_supported_schema(version: str, supported: str, artifact: str) -> None:
+    if schema_major(version) != schema_major(supported):
+        raise ValueError(f"Unsupported {artifact} schema version: {version!r}")
+
 
 FILE_COLUMNS = (
     "schema_version",

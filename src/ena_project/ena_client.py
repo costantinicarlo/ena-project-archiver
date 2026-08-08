@@ -12,6 +12,7 @@ from urllib.request import Request, urlopen
 from . import __version__
 
 PORTAL_URL = "https://www.ebi.ac.uk/ena/portal/api/filereport"
+RETURN_FIELDS_URL = "https://www.ebi.ac.uk/ena/portal/api/returnFields"
 BROWSER_URL = "https://www.ebi.ac.uk/ena/browser/api/xml"
 FILEREPORT_FIELDS = (
     "study_accession",
@@ -114,3 +115,6 @@ class EnaClient:
 
     def fetch_xml(self, accession: str) -> Response:
         return self._get(f"{BROWSER_URL}/{accession}")
+
+    def fetch_return_fields(self) -> Response:
+        return self._get(f"{RETURN_FIELDS_URL}?{urlencode({'result': 'read_run'})}")
