@@ -87,8 +87,4 @@ Status describes demonstrated behavior, not the presence of a similarly named mo
 
 ## Live smoke details
 
-The opt-in ENA `returnFields?result=read_run` test passed. A metadata-only PRJEB2772 acquisition
-resolved PRJEB2772/ERP001030 and normalized 5 Samples, 5 Experiments, 5 Runs, 10 remote files,
-and 55 canonicalized Sample attributes. One optional Browser XML alias timed out; the transaction
-recorded that warning, returned partial status, promoted a coherent snapshot, and passed
-`validate --metadata-only`. No sequence objects were downloaded.
+The opt-in ENA `returnFields?result=read_run` test passed. A metadata-only PRJEB2772 acquisition resolved PRJEB2772/ERP001030 and normalized 5 Samples, 5 Experiments, 5 Runs, 10 remote files, and 55 canonicalized Sample attributes. One optional Browser XML alias timed out; the transaction recorded that warning, returned partial status, promoted a coherent snapshot, and passed `validate --metadata-only`. No sequence objects were downloaded.
