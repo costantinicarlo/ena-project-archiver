@@ -2,6 +2,16 @@
 
 All notable changes to this project are documented here.
 
+## 0.1.1 - 2026-08-08
+
+Patch release tightening archive safety and provenance validation.
+
+### Fixed
+
+- Enforced true mount-point validation for macOS `/Volumes` destinations so ordinary writable directories are rejected.
+- Rejected explicit manifest inputs that conflict with the existing archive snapshot to avoid cross-project contamination.
+- Strengthened metadata validation to compare the full regenerated manifest content against the manifest on disk, including provenance fields.
+
 ## 0.1.0 - 2026-08-08
 
 First public release, including the initial implementation and its pre-release hardening.

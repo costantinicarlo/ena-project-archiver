@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import csv
 import json
+from dataclasses import asdict
 from pathlib import Path
 
 from .downloader import safe_destination, verify_file
@@ -17,6 +18,7 @@ from .metadata.schemas import (
     SNAPSHOT_SCHEMA_VERSION,
     require_supported_schema,
 )
+from .models import ManifestEntry
 from .selection import SelectionError
 
 
@@ -30,6 +32,10 @@ def _read_table(path: Path, columns: tuple[str, ...], errors: list[str]) -> list
             errors.append(f"Unsupported columns: {path}")
             return []
         return list(reader)
+
+
+def _manifest_entry_signature(entry: ManifestEntry) -> tuple[object, ...]:
+    return tuple(asdict(entry).values())
 
 
 def _unique_values(
@@ -207,28 +213,10 @@ def validate_metadata(outdir: Path) -> list[str]:
                     next(iter(policies)),
                     read_run_metadata(derived / "files.tsv"),
                 )
-                expected_rows = {
-                    (
-                        entry.run_accession,
-                        entry.representation,
-                        entry.file_index,
-                        entry.selection_reason,
-                        entry.local_relpath,
-                    )
-                    for entry in expected
-                }
-                actual_rows = {
-                    (
-                        entry.run_accession,
-                        entry.representation,
-                        entry.file_index,
-                        entry.selection_reason,
-                        entry.local_relpath,
-                    )
-                    for entry in manifest
-                }
+                expected_rows = {_manifest_entry_signature(entry) for entry in expected}
+                actual_rows = {_manifest_entry_signature(entry) for entry in manifest}
                 if actual_rows != expected_rows:
-                    errors.append("Manifest does not match its declared selection policy")
+                    errors.append("Manifest content does not match the regenerated inventory manifest")
             except SelectionError as exc:
                 errors.append(f"Manifest selection policy is unsatisfied: {exc}")
     expected_counts = {
