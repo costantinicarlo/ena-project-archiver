@@ -18,7 +18,8 @@ Rerun the same manifest command. Keep `.part` files: curl resumes them where sup
 objects are checked by byte count and MD5 and skipped, so reruns concentrate on unfinished files.
 
 ```bash
-ena-project download "$OUTDIR/manifest.tsv" --outdir "$OUTDIR" --jobs 1
+ena-project download "$OUTDIR/manifest.tsv" --outdir "$OUTDIR" \
+	--jobs 1 --batch-attempts 3
 cat "$OUTDIR/logs/failed_accessions.txt"
 ```
 
@@ -47,6 +48,10 @@ df -h /Volumes/Research
 The program will not create `/Volumes/<missing-name>` because that could fill the system disk.
 
 ## Validation failures
+
+Before downloading sequence objects, use `ena-project validate "$OUTDIR" --metadata-only` to check
+snapshot structure and relationships. Full validation intentionally reports missing manifest
+objects until acquisition completes.
 
 Run `ena-project validate "$OUTDIR"` to collect metadata checksums, relationships, inventory,
 manifest, path, size, and MD5 problems in one report. Restore metadata from a verified archived
