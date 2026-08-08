@@ -2,6 +2,7 @@
 
 from __future__ import annotations
 
+import socket
 import time
 from dataclasses import dataclass
 from typing import Callable
@@ -92,7 +93,7 @@ class EnaClient:
                 last_error = exc
                 if exc.code < 500 and exc.code != 429:
                     break
-            except (URLError, TimeoutError) as exc:
+            except (URLError, TimeoutError, socket.timeout) as exc:
                 last_error = exc
             if attempt < self.attempts:
                 self.sleeper(min(8.0, float(2 ** (attempt - 1))))
