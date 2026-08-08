@@ -131,8 +131,6 @@ def create_snapshot(
             if path.is_file() and path.name != "snapshot.json" and "archive" not in path.parts:
                 kind = "raw" if "raw" in path.parts else "derived"
                 artifacts.append(_describe(path, staging_root, kind))
-        if manifest_path.is_file():
-            artifacts.append(_describe(manifest_path, staging_root, "manifest"))
         snapshot = {
             "schema_version": SNAPSHOT_SCHEMA_VERSION,
             "tool_version": __version__,

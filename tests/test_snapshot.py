@@ -1,3 +1,4 @@
+import csv
 import json
 from datetime import datetime, timezone
 from pathlib import Path
@@ -9,6 +10,11 @@ from ena_project.metadata.normalize import normalize as real_normalize
 from ena_project.metadata.snapshot import create_snapshot, normalize_existing
 
 FIXTURES = Path(__file__).parent / "fixtures"
+
+
+def identity_cases() -> list[dict[str, str]]:
+    with (FIXTURES / "cases" / "identity-cases.tsv").open(encoding="utf-8", newline="") as handle:
+        return list(csv.DictReader(handle, delimiter="\t"))
 
 
 class FakeClient:
@@ -162,6 +168,30 @@ def _duplicate_fixture(**updates: str) -> bytes:
     for field, value in updates.items():
         second[header.index(field)] = value
     return ("\n".join([lines[0], lines[1], "\t".join(second)]) + "\n").encode()
+
+
+def _identity_fixture(project: str, study: str) -> bytes:
+    lines = (FIXTURES / "filereport.tsv").read_text().splitlines()
+    header = lines[0].split("\t")
+    row = lines[1].split("\t")
+    row[header.index("study_accession")] = project
+    row[header.index("secondary_study_accession")] = study
+    return (lines[0] + "\n" + "\t".join(row) + "\n").encode()
+
+
+@pytest.mark.parametrize(
+    "case",
+    [case for case in identity_cases() if case["expected"] == "valid"],
+    ids=lambda row: row["case"],
+)
+def test_insdc_identity_fixtures_normalize(tmp_path: Path, case: dict[str, str]) -> None:
+    client = FileReportClient(_identity_fixture(case["project_accession"], case["study_accession"]))
+    snapshot_path, _ = create_snapshot(
+        case["input_accession"], tmp_path, client=client, now=fixed_now
+    )
+    snapshot = json.loads(snapshot_path.read_text())
+    assert snapshot["project_accession"] == case["project_accession"]
+    assert snapshot["study_accession"] == case["study_accession"]
 
 
 def test_multi_study_project_is_rejected(tmp_path: Path) -> None:

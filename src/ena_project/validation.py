@@ -100,10 +100,7 @@ def validate_metadata(outdir: Path) -> list[str]:
         if path.is_file()
         and path != snapshot_path
         and "archive" not in path.relative_to(outdir).parts
-        and (
-            path.relative_to(outdir).parts[0] == "metadata"
-            or path.relative_to(outdir).as_posix() == "manifest.tsv"
-        )
+        and (path.relative_to(outdir).parts[0] == "metadata")
     }
     for missing in sorted(actual_artifacts - ledger_paths):
         errors.append(f"File is absent from snapshot artifact ledger: {missing}")
