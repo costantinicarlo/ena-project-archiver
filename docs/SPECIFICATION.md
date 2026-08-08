@@ -1,11 +1,3 @@
----
-modified: 2026-08-08 16:44:16 +00:00
----
-> [!note] 
-> ok, turn this into a **formal design/specification contract**
-
-Below is the specification I would use as the authoritative implementation contract for the first ENA application. I have deliberately separated **normative requirements** from later extensions so that an implementation agent has relatively little freedom to reinterpret the archival philosophy.
-
 # ENA Project Archiver
 
 ## Formal Design and Implementation Specification
@@ -52,19 +44,18 @@ The application is intended to be the ENA counterpart of `ncbi-sra-bioproject-d
 The implementation SHALL prioritize:
 
 1. provenance;
-    
+
 2. reproducibility;
-    
+
 3. preservation of repository evidence;
-    
+
 4. explicit acquisition policy;
-    
+
 5. safe recovery from interruption or corruption;
-    
+
 6. long-term intelligibility of the resulting archive;
-    
+
 7. portability between macOS and Linux.
-    
 
 Convenience for immediate downstream analysis is important but SHALL NOT override archival provenance.
 
@@ -87,11 +78,10 @@ A MAY requirement is optional.
 ENA commonly exposes several possible representations of a raw-read Run:
 
 - the files originally submitted to ENA;
-    
+
 - ENA-generated standardized FASTQ;
-    
+
 - an SRA-format representation suitable for the SRA Toolkit.
-    
 
 Submitted files may themselves be FASTQ, BAM, CRAM, FAST5, HDF5 or other accepted formats. ENA-generated FASTQ is therefore an analysis-friendly standardized representation, not necessarily the original deposited object. Submitted files may also be unavailable when the run originated at another INSDC partner, and ENA-generated FASTQ cannot be produced for every native data type. ([ENA Documentation](https://ena-docs.readthedocs.io/en/latest/faq/archive-generated-files.html?utm_source=chatgpt.com "Archive Generated Run Files — ENA Documentation 1 documentation"))
 
@@ -149,21 +139,20 @@ The underlying ENA client MAY understand Sample, Experiment and Run accession fa
 The application SHALL NOT recursively acquire:
 
 - genome assemblies;
-    
+
 - transcriptome assemblies;
-    
+
 - annotated nucleotide sequences;
-    
+
 - VCF or other analysis products;
-    
+
 - metagenome analysis objects;
-    
+
 - publications;
-    
+
 - linked external database resources;
-    
+
 - controlled-access sequencing datasets.
-    
 
 Such relationships MAY be preserved in metadata when returned by ENA, but SHALL NOT trigger recursive downloads.
 
@@ -263,11 +252,10 @@ If a valid public Study can be retrieved but ENA does not expose a corresponding
 This condition MUST:
 
 - be explicitly recorded in `snapshot.json`;
-    
+
 - generate a warning;
-    
+
 - never be inferred from string manipulation alone.
-    
 
 ---
 
@@ -307,17 +295,16 @@ The repository/source distinction is important because identically accessioned R
 The ENA Portal API SHALL be the principal source for:
 
 - project/run discovery;
-    
+
 - object crosswalks;
-    
+
 - run-level metadata;
-    
+
 - remote file inventory;
-    
+
 - remote byte counts;
-    
+
 - remote MD5 checksums.
-    
 
 ENA provides a dedicated `filereport` resource for this purpose. Study/BioProject, Experiment, Sample and Run accessions can be supplied to the `read_run` result, and file-related fields such as FASTQ URLs, MD5 values and byte sizes can be requested explicitly. ([ENA Documentation](https://ena-docs.readthedocs.io/en/latest/retrieval/programmatic-access/file-reports.html?utm_source=chatgpt.com "Retrieving ENA File reports — ENA Documentation 1 documentation"))
 
@@ -504,17 +491,16 @@ They SHALL be UTF-8.
 TSV tables SHALL:
 
 - contain one header row;
-    
+
 - use literal tab separators;
-    
+
 - use one logical record per row;
-    
+
 - avoid embedded unescaped newlines;
-    
+
 - have deterministic column order;
-    
+
 - have deterministic record ordering.
-    
 
 Schema versions SHALL be explicit.
 
@@ -839,15 +825,14 @@ manifest failure
 A representation SHALL be considered valid for verified archival only when:
 
 - at least one file is present;
-    
+
 - every file has a remote path;
-    
+
 - every file has a positive/valid byte count when ENA supplies byte information;
-    
+
 - every file has a syntactically valid repository MD5;
-    
+
 - URL/checksum/byte arrays have compatible cardinalities.
-    
 
 ### Critical rule
 
@@ -1051,9 +1036,8 @@ The event SHALL be logged.
 A file SHALL be labelled `.bad.<timestamp>` only when it fails to match both:
 
 - the currently expected object;
-    
+
 - any recognized previous valid object relevant to that path.
-    
 
 This rule preserves the distinction between:
 
@@ -1118,15 +1102,14 @@ A `.part` file MUST never be mistaken for a completed archival object.
 Before downloading a file whose final destination already exists, the application SHALL:
 
 1. compare its size with the manifest;
-    
+
 2. calculate its MD5;
-    
+
 3. skip the download if both match;
-    
+
 4. determine whether it represents a valid superseded object if the current checksum differs;
-    
+
 5. otherwise quarantine it before reacquisition.
-    
 
 This makes the command idempotent.
 
@@ -1194,15 +1177,14 @@ The application SHOULD prioritize predictable storage and network behavior over 
 Concurrency MUST NOT compromise:
 
 - independent `.part` files;
-    
+
 - checksum validation;
-    
+
 - atomic finalization;
-    
+
 - logging;
-    
+
 - recovery of individual failures.
-    
 
 A failure in one worker SHALL NOT automatically cancel unrelated valid downloads.
 
@@ -1217,13 +1199,12 @@ Other independent downloads SHALL be permitted to finish.
 Retry logic SHOULD include:
 
 - transient HTTP/network failures;
-    
+
 - interrupted connections;
-    
+
 - resumable partial transfers;
-    
+
 - bounded backoff.
-    
 
 Persistent failures SHALL be summarized in:
 
@@ -1308,19 +1289,18 @@ ena-project metadata PRJEB123456 \
 This SHALL:
 
 - resolve accessions;
-    
+
 - retrieve raw metadata;
-    
+
 - retrieve complete remote file inventory;
-    
+
 - normalize metadata;
-    
+
 - write `files.tsv`;
-    
+
 - write `snapshot.json`;
-    
+
 - download no sequence data.
-    
 
 ## 30.2 Snapshot
 
@@ -1420,58 +1400,54 @@ Ambiguous inputs SHALL cause a clear configuration error rather than being guess
 ### Metadata integrity
 
 - presence and syntax of `snapshot.json`;
-    
+
 - supported schema major version;
-    
+
 - existence of recorded metadata artifacts;
-    
+
 - artifact byte size;
-    
+
 - artifact SHA-256;
-    
+
 - relational consistency between normalized Study, Sample, Experiment and Run records.
-    
 
 ### Inventory integrity
 
 - valid representation values;
-    
+
 - unique file records;
-    
+
 - valid MD5 syntax;
-    
+
 - valid file sizes;
-    
+
 - absence of contradictory local paths;
-    
+
 - file-array explosion consistency.
-    
 
 ### Manifest integrity
 
 - supported schema;
-    
+
 - deterministic/valid fields;
-    
+
 - every manifest file must exist in `files.tsv`;
-    
+
 - every Run required by the snapshot must be represented according to the selected policy;
-    
+
 - local paths must remain inside the archive root;
-    
+
 - no path traversal.
-    
 
 ### Downloaded data integrity
 
 For every manifest object expected locally:
 
 - file exists;
-    
+
 - size matches;
-    
+
 - MD5 matches.
-    
 
 Validation SHALL report all discovered problems where practical rather than stopping at the first error.
 
@@ -2218,11 +2194,5 @@ The second milestone SHALL add verified downloading and recovery.
 The third SHALL complete XML metadata snapshots, refresh and whole-archive validation.
 
 This ordering prevents transfer mechanics from obscuring errors in the more scientifically important accession, provenance and representation model.
-
----
-
-## End of normative specification
-
-This is now sufficiently specific to serve both as a design document and as the contract against which an AI coding agent's implementation can be reviewed. The particularly important additions over our initial discussion are the **transactional refresh model**, **malformed-vs-unavailable distinction**, **per-run storage**, and **superseded-object handling**—all of which matter if we truly mean “archive” rather than merely “downloader.”
 
 ---
