@@ -227,6 +227,20 @@ def test_filereport_header_must_match_requested_schema(tmp_path: Path, mutation:
         create_snapshot("PRJEB1", tmp_path, client=FileReportClient(content), now=fixed_now)
 
 
+def test_filereport_accepts_ena_canonical_field_reordering(tmp_path: Path) -> None:
+    lines = (FIXTURES / "filereport.tsv").read_text().splitlines()
+    header = lines[0].split("\t")
+    row = lines[1].split("\t")
+    index = header.index("run_accession")
+    reordered_header = [header[index], *header[:index], *header[index + 1 :]]
+    reordered_row = [row[index], *row[:index], *row[index + 1 :]]
+    content = ("\t".join(reordered_header) + "\n" + "\t".join(reordered_row) + "\n").encode()
+    snapshot_path, _ = create_snapshot(
+        "PRJEB1", tmp_path, client=FileReportClient(content), now=fixed_now
+    )
+    assert snapshot_path.is_file()
+
+
 def test_snapshot_invocation_redacts_sensitive_values(tmp_path: Path) -> None:
     snapshot_path, _ = create_snapshot(
         "PRJEB1",

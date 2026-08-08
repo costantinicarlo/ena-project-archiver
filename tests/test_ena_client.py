@@ -47,6 +47,19 @@ def test_empty_public_result_is_distinct_from_request_failure() -> None:
         client.fetch_filereport("PRJEB999999999")
 
 
+def test_bare_transport_timeout_is_wrapped_after_bounded_attempts() -> None:
+    attempts = []
+
+    def timeout(request, timeout: int):
+        attempts.append(request.full_url)
+        raise TimeoutError("read timed out")
+
+    client = EnaClient(attempts=2, opener=timeout, sleeper=lambda delay: None)
+    with pytest.raises(EnaRequestError, match="read timed out"):
+        client.fetch_filereport("PRJEB1")
+    assert len(attempts) == 2
+
+
 @pytest.mark.skipif(
     os.environ.get("ENA_LIVE_SCHEMA_TEST") != "1",
     reason="set ENA_LIVE_SCHEMA_TEST=1 to query ENA returnFields",
