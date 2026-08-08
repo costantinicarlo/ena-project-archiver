@@ -1,3 +1,4 @@
+import os
 import subprocess
 from collections import Counter
 from dataclasses import replace
@@ -158,8 +159,25 @@ def test_batch_writes_stable_persistent_failure_report(tmp_path: Path) -> None:
     )
 
 
-def test_macos_missing_volume_and_path_escape_are_rejected(tmp_path: Path) -> None:
+def test_macos_missing_volume_and_path_escape_are_rejected(tmp_path: Path, monkeypatch) -> None:
     with pytest.raises(FileNotFoundError, match="not mounted"):
         validate_destination(Path("/Volumes/DefinitelyMissing/project"), platform="darwin")
+
+    volume = Path("/Volumes/ena-project-test-dir")
+    original_exists = Path.exists
+    original_is_dir = Path.is_dir
+
+    def fake_exists(path: Path) -> bool:
+        return path == volume or original_exists(path)
+
+    def fake_is_dir(path: Path) -> bool:
+        return path == volume or original_is_dir(path)
+
+    monkeypatch.setattr(Path, "exists", fake_exists)
+    monkeypatch.setattr(Path, "is_dir", fake_is_dir)
+    monkeypatch.setattr(os.path, "ismount", lambda path: False)
+    monkeypatch.setattr(os, "access", lambda path, mode: False)
+    with pytest.raises(FileNotFoundError, match="not a mounted volume"):
+        validate_destination(Path("/Volumes/ena-project-test-dir/project"), platform="darwin")
     with pytest.raises(ValueError, match="escapes OUTDIR"):
         download_one(replace(entry(), local_relpath="../escape"), tmp_path, "curl")

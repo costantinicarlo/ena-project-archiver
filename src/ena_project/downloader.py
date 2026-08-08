@@ -38,9 +38,14 @@ def validate_destination(path: Path, platform: str = sys.platform) -> Path:
     parts = requested.parts
     if platform == "darwin" and len(parts) >= 3 and parts[0] == "/" and parts[1] == "Volumes":
         volume = Path("/Volumes") / parts[2]
-        if not volume.is_dir():
+        if not volume.exists():
             raise FileNotFoundError(
                 f"Destination volume is not mounted: {volume}. "
+                "Check the spelling with: ls -la /Volumes"
+            )
+        if not volume.is_dir() or not os.path.ismount(str(volume)):
+            raise FileNotFoundError(
+                f"Destination volume is not a mounted volume: {volume}. "
                 "Check the spelling with: ls -la /Volumes"
             )
         if not os.access(volume, os.W_OK):
