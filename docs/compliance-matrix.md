@@ -4,9 +4,9 @@ Audit date: 2026-08-08
 
 Authoritative contract: [SPECIFICATION.md](SPECIFICATION.md)
 
-Audited implementation commit: `25d1223912a4205d23c7a8145d992526b6d8fe6e`
+Audited release: `v0.1.1` (`42cf1a2`)
 
-Offline tests: `77 passed, 1 skipped` (opt-in live schema test)
+Offline tests: `79 passed, 1 skipped` on Python 3.9, 3.12, and 3.13
 
 Lint: `ruff check src tests` passed
 

@@ -154,9 +154,13 @@ def _load_download_input(args: argparse.Namespace, outdir: Path):
             manifest_projects = {entry.project_accession for entry in entries}
             manifest_studies = {entry.study_accession for entry in entries}
             if expected_project and manifest_projects != {expected_project}:
-                raise ValueError("Manifest input is incompatible with the existing archive snapshot")
+                raise ValueError(
+                    "Manifest input is incompatible with the existing archive snapshot"
+                )
             if expected_study and manifest_studies != {expected_study}:
-                raise ValueError("Manifest input is incompatible with the existing archive snapshot")
+                raise ValueError(
+                    "Manifest input is incompatible with the existing archive snapshot"
+                )
         destination = outdir / "manifest.tsv"
         if source.resolve() != destination.resolve():
             if destination.exists() and destination.read_bytes() != source.read_bytes():

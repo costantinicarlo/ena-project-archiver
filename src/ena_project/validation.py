@@ -216,7 +216,9 @@ def validate_metadata(outdir: Path) -> list[str]:
                 expected_rows = {_manifest_entry_signature(entry) for entry in expected}
                 actual_rows = {_manifest_entry_signature(entry) for entry in manifest}
                 if actual_rows != expected_rows:
-                    errors.append("Manifest content does not match the regenerated inventory manifest")
+                    errors.append(
+                        "Manifest content does not match the regenerated inventory manifest"
+                    )
             except SelectionError as exc:
                 errors.append(f"Manifest selection policy is unsatisfied: {exc}")
     expected_counts = {

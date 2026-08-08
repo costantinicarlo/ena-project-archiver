@@ -1,6 +1,6 @@
 # From a Paper to a Reusable Local ENA Dataset
 
-*An end-to-end tutorial for ENA Project Archiver 0.1.1*
+An end-to-end tutorial for ENA Project Archiver 0.1.1.
 
 A paper catches your attention because its sequencing data could answer a question of your own. Perhaps you want to reanalyse an RNA-seq experiment with a newer reference genome, include published genomes in a population-genetic comparison, or simply preserve an important dataset locally before building a computational workflow around it.
 

@@ -88,8 +88,9 @@ Policies are `archival`, `submitted`, `fastq`, `sra`, and `all`. Exit statuses a
 `1` runtime failure, `2` invalid input/configuration, `3` required retrieval or download incomplete,
 `4` usable partial metadata, `5` normalization/validation failure, and `130` interruption.
 
-See [docs/design.md](docs/design.md), [docs/tutorial.md](docs/tutorial.md), and
-[docs/troubleshooting.md](docs/troubleshooting.md). Contract coverage is recorded in
+See [docs/design.md](docs/design.md), [docs/quickstart.md](docs/quickstart.md),
+[docs/tutorial-publication-to-local-ena-project.md](docs/tutorial-publication-to-local-ena-project.md),
+and [docs/troubleshooting.md](docs/troubleshooting.md). Contract coverage is recorded in
 [docs/compliance-matrix.md](docs/compliance-matrix.md) against the authoritative
 [specification](docs/SPECIFICATION.md). `validate --metadata-only` checks snapshot structure and
 relationships before sequence acquisition; plain `validate` additionally requires every manifest

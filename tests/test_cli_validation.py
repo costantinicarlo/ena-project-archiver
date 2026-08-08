@@ -157,7 +157,10 @@ def test_manifest_input_rejects_incompatible_archive_snapshot(tmp_path: Path) ->
     other_manifest = tmp_path / "other.tsv"
     from ena_project.manifest import write_manifest
 
-    entries = [replace(entry, project_accession="PRJEB999", study_accession="ERP999") for entry in entries]
+    entries = [
+        replace(entry, project_accession="PRJEB999", study_accession="ERP999")
+        for entry in entries
+    ]
     write_manifest(entries, other_manifest)
     assert main(["download", str(other_manifest), "--outdir", str(tmp_path), "--dry-run"]) == 2
 

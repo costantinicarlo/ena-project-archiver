@@ -163,6 +163,10 @@ def test_macos_missing_volume_and_path_escape_are_rejected(tmp_path: Path, monke
     with pytest.raises(FileNotFoundError, match="not mounted"):
         validate_destination(Path("/Volumes/DefinitelyMissing/project"), platform="darwin")
 
+    monkeypatch.chdir(Path("/"))
+    with pytest.raises(FileNotFoundError, match="not mounted"):
+        validate_destination(Path("Volumes/DefinitelyMissing/project"), platform="darwin")
+
     volume = Path("/Volumes/ena-project-test-dir")
     original_exists = Path.exists
     original_is_dir = Path.is_dir
