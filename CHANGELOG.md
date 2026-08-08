@@ -1,6 +1,13 @@
 # Changelog
 
 All notable changes to this project are documented here.
+No `0.2.0` release was published; that label appeared only in pre-release development history.
+
+## Unreleased
+
+### Fixed
+
+- Apply macOS `/Volumes` mount validation after resolving relative and symlinked destinations.
 
 ## 0.1.1 - 2026-08-08
 

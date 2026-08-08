@@ -34,8 +34,8 @@ def verify_file(path: Path, entry: ManifestEntry) -> bool:
 
 
 def validate_destination(path: Path, platform: str = sys.platform) -> Path:
-    requested = path.expanduser()
-    parts = requested.parts
+    resolved = path.expanduser().resolve()
+    parts = resolved.parts
     if platform == "darwin" and len(parts) >= 3 and parts[0] == "/" and parts[1] == "Volumes":
         volume = Path("/Volumes") / parts[2]
         if not volume.exists():
@@ -50,7 +50,7 @@ def validate_destination(path: Path, platform: str = sys.platform) -> Path:
             )
         if not os.access(volume, os.W_OK):
             raise PermissionError(f"Destination volume is not writable: {volume}")
-    return requested.resolve()
+    return resolved
 
 
 def safe_destination(outdir: Path, local_relpath: str) -> Path:

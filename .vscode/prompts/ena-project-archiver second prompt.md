@@ -1136,4 +1136,4 @@ recommended release version
 
 Do not claim complete compliance unless the corrected compliance matrix is supported by executable tests and the actual implementation.
 
-Given the scope of these fixes, if `0.1.0` has already been publicly tagged/released, do not rewrite that release. Prepare the changes as a new release, preferably `0.1.1` for strictly corrective backward-compatible hardening or `0.2.0` if CLI/schema-visible changes are substantial enough to warrant a minor release.
+Given the scope of these fixes, if `0.1.0` has already been publicly tagged/released, do not rewrite that release. Prepare the changes as a new patch release for strictly corrective backward-compatible hardening, or as a future minor release if CLI/schema-visible changes are substantial.
