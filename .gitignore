@@ -11,6 +11,7 @@ __pycache__/
 htmlcov/
 build/
 dist/
+.vscode/
 
 # Runtime archive products at the repository root.
 /manifest.tsv
